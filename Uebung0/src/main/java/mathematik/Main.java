@@ -1,8 +1,15 @@
-import mathematik.Vektor;
+package mathematik;
+
 import trigonometrie.Winkel;
 
-
+/**
+ * Hauptklasse zur Demonstration der Vektor-Klasse
+ */
 public class Main {
+    /**
+     * Einstiegspunkt des Programms. Demonstriert die Funktionen der Vektor-Klasse.
+     * @param args Kommandozeilenargumente (werden nicht verwendet)
+     */
     public static void main (String[] args) {
 
         //Vektor mit Konstruktor 1 erstellt
@@ -33,7 +40,7 @@ public class Main {
         //Berechnung des orthogonalen Einheitsvektors von v1
         Vektor v3 = v1.orthogonalerEinheitsvektor();
         System.out.println("Orthogonaler Einheitsvektor von Vektor 1:");
-        System.out.println("Vektor 3 = " + v3.toString());
+        System.out.println("Vektor 3 = " + v3);
 
         System.out.println();
 

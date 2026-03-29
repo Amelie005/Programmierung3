@@ -8,13 +8,15 @@ import trigonometrie.Winkel;
  */
 public class Vektor {
 
-    //Konstante, die den Nullvektor repräsentiert
+    /**
+     * Konstante, die den Nullvektor repräsentiert
+     */
     public static final Vektor NULLVEKTOR = new Vektor(0.0, 0.0);
     private final double x;
     private final double y;
 
     /**
-     * Konstruktor 1: KArtesische Koordinaten
+     * Konstruktor 1: Kartesische Koordinaten
      * @param x x-Koordinate des Vektors
      * @param y y-Koordinate des Vektors
      */
@@ -43,13 +45,13 @@ public class Vektor {
 
     /**
      * Getter für den Wert der x-Koordinate
-     * @return x-Koordinate
+     * @return x-Koordinate des Vektors
      */
     public double getX() {return x;}
 
     /**
      * Getter für den Wert der y-Koordinate
-     * @return y-Koordinate
+     * @return y-Koordinate des Vektors
      */
     public double getY() {return y;}
 
