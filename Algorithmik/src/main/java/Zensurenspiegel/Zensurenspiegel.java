@@ -6,9 +6,6 @@ package Zensurenspiegel;
  */
 public class Zensurenspiegel {
 
-    /**
-     * Konstante, die die höchste Note repräsentiert
-     */
     private final int maxNote;
     private final int[] anzahlNoten;
 

@@ -1,0 +1,47 @@
+package Polymorphie;
+
+public class Oberklasse {
+	private int x;
+	
+	public Oberklasse()
+	{
+		this.x = 7;
+	}
+	
+	public void thisXAusgeben()
+	{
+		System.out.println("x in Polymorphie.Oberklasse: " + this.x);
+	}
+	
+	public void textAusgeben()
+	{
+		System.out.println("Polymorphie.Oberklasse - textAusgeben");
+	}
+	
+	public void thisXAusgeben2()
+	{
+		System.out.println("x in Polymorphie.Oberklasse: " + this.x);
+	}
+	
+	public void andereMethodenAufrufen()
+	{
+		System.out.println("------------------");
+		System.out.println("getX() in Polymorphie.Oberklasse aufgerufen: " + this.getX());
+		System.out.print("thisXAusgeben in Polymorphie.Oberklasse aufgerufen: ");
+		this.thisXAusgeben();
+		System.out.print("thisXAusgeben2 in Polymorphie.Oberklasse aufgerufen: ");
+		this.thisXAusgeben2();
+		System.out.println("------------------");
+	}
+	
+	public void eineLetzteMethode()
+	{
+		System.out.println("this.x in Polymorphie.Oberklasse: " + this.x);
+	}
+	
+	public int getX()
+	{
+		return this.x;
+	}
+
+}

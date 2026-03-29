@@ -1,3 +1,4 @@
+package Polymorphie;
 
 public class Unterklasse extends Oberklasse {
 	private int x;
@@ -10,13 +11,13 @@ public class Unterklasse extends Oberklasse {
 	@Override
 	public void textAusgeben()
 	{
-		System.out.println("Unterklasse - textAusgeben");
+		System.out.println("Polymorphie.Unterklasse - textAusgeben");
 	}
 	
 	@Override
 	public void thisXAusgeben2()
 	{
-		System.out.println("x in Unterklasse: " + this.x);
+		System.out.println("x in Polymorphie.Unterklasse: " + this.x);
 	}
 	
 	@Override
@@ -25,7 +26,7 @@ public class Unterklasse extends Oberklasse {
 		System.out.println("------------------");
 		System.out.print("super-Methode aufgerufen: ");
 		super.eineLetzteMethode();
-		System.out.println("this.x in Unterklasse: " + this.x);
+		System.out.println("this.x in Polymorphie.Unterklasse: " + this.x);
 		System.out.println("------------------");
 	}
 	
