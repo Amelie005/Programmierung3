@@ -1,4 +1,4 @@
-package trigonometrie;
+package Uebung0.trigonometrie;
 
 /**
  * Stellt einen trigonometrie.Winkel dar, der immer zwischen 0° (inklusive)

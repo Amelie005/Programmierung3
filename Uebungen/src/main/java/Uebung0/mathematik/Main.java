@@ -1,4 +1,4 @@
-package mathematik;
+package Pflichtuebungen.Uebung0.mathematik;
 
 import trigonometrie.Winkel;
 

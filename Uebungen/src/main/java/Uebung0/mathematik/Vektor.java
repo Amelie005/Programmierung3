@@ -1,4 +1,4 @@
-package mathematik;
+package Uebung0.mathematik;
 
 import trigonometrie.Winkel;
 
@@ -33,7 +33,7 @@ public class Vektor {
      * @param betrag Länge des Vektors
      * @param winkel Winkel zwischen dem Vektor und der x-Achse
      */
-    public Vektor(double betrag, Winkel winkel) {
+    public Vektor(double betrag, Uebung0.trigonometrie.Winkel winkel) {
         if (winkel == null) //prüft ob Winkel null ist
             throw new NullPointerException("Winkel darf nicht null sein");
         if (!Double.isFinite(betrag) || betrag < 0) //prüft ob Länge endlich und größer als 0 ist

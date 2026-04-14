@@ -1,4 +1,4 @@
-package Ratespiel;
+package Zusatzuebungen.Algorithmik.Ratespiel;
 
 import java.util.Scanner;
 
@@ -17,7 +17,7 @@ public class Main {
         String neuesspiel;
 
         do {
-            Zahlenratespiel spiel = new Zahlenratespiel();  // neues Spiel bei jedem Durchlauf
+            Ratespiel.Zahlenratespiel spiel = new Ratespiel.Zahlenratespiel();  // neues Spiel bei jedem Durchlauf
             int ergebnis;
 
 
