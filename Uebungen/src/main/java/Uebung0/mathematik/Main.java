@@ -1,6 +1,6 @@
-package Pflichtuebungen.Uebung0.mathematik;
+package Uebung0.mathematik;
 
-import trigonometrie.Winkel;
+import Uebung0.trigonometrie.Winkel;
 
 /**
  * Hauptklasse zur Demonstration der Vektor-Klasse

@@ -1,6 +1,6 @@
 package Uebung0.mathematik;
 
-import trigonometrie.Winkel;
+import Uebung0.trigonometrie.Winkel;
 
 /**
  * Klasse zur Speicherung eines Vektors im zweidimensionalen Raum.
@@ -19,6 +19,7 @@ public class Vektor {
      * Konstruktor 1: Kartesische Koordinaten
      * @param x x-Koordinate des Vektors
      * @param y y-Koordinate des Vektors
+     * @throws IllegalArgumentException wenn x oder y nicht endlich sind
      */
     public Vektor(double x, double y) {
         if (!Double.isFinite(x) || !Double.isFinite(y)) //prüft ob Zahlen unendlich sind
@@ -32,8 +33,10 @@ public class Vektor {
      * Konstruktor 2: Polare Koordinaten
      * @param betrag Länge des Vektors
      * @param winkel Winkel zwischen dem Vektor und der x-Achse
+     * @throws NullPointerException wenn der Winkel null ist
+     * @throws IllegalArgumentException wenn der Betrag negativ oder nicht endlich ist
      */
-    public Vektor(double betrag, Uebung0.trigonometrie.Winkel winkel) {
+    public Vektor(double betrag, Winkel winkel) {
         if (winkel == null) //prüft ob Winkel null ist
             throw new NullPointerException("Winkel darf nicht null sein");
         if (!Double.isFinite(betrag) || betrag < 0) //prüft ob Länge endlich und größer als 0 ist
@@ -75,6 +78,7 @@ public class Vektor {
      * Addiert aktuellen Vekto mit neuem Vektor
      * @param v neuer Vektor v
      * @return Vektor als Ergebnis der Addition
+     * @throws NullPointerException wenn der Vektor v null ist
      */
     public Vektor addieren(Vektor v) {
         if (v == null) //prüft ob Summand null ist
@@ -86,6 +90,7 @@ public class Vektor {
      * Berechnet das Skalarprodukt vom aktuellen Vektor und einem neuen Vektor v
      * @param v neuer Vektor v
      * @return Ergebnis der Rechnung als double
+     * @throws NullPointerException wenn der Vektor v null ist
      */
     public double skalarprodukt(Vektor v) {
         if (v == null) //prüft ob Vektor null ist
@@ -96,6 +101,7 @@ public class Vektor {
     /**
      * Berechnet einen Vektor der Länge 1, der orthogonal zum aktuellen Vektor ist
      * @return zum aktuellen Vektor orthogonalen Vektor
+     * @throws ArithmeticException wenn der Betrag = 0 ist
      */
     public Vektor orthogonalerEinheitsvektor() {
         double betrag = this.getBetrag();
@@ -105,13 +111,14 @@ public class Vektor {
         return new Vektor(-this.y / betrag, this.x / betrag);
     }
 
+
     /**
      * Liefert eine lesbare String-Darstellung des Vektors
      * @return Vektor als String-Darstellung
      */
     @Override
     public String toString() {
-        return String.format("(%.2f, %.2f)", x, y); //% - Beginn eines Platzhalter
+        return String.format("(%.2f, %.2f)", this.x, this.y); //% - Beginn eines Platzhalter
                                                     //.2 - zwei Nachkommastellen
                                                     //f - Zahl als float
     }

@@ -1,4 +1,4 @@
-package spielereien;
+package bankprojekt.spielereien;
 
 import java.time.LocalDate;
 import bankprojekt.basisdaten.*;

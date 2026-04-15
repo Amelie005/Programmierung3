@@ -1,4 +1,4 @@
-package automat;
+package Uebung1.automat;
 
 /**
  * Test für EndlicherAutomat

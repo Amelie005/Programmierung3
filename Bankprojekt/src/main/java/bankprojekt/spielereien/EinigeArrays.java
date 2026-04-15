@@ -1,4 +1,4 @@
-package spielereien;
+package bankprojekt.spielereien;
 
 import java.util.Arrays;
 
