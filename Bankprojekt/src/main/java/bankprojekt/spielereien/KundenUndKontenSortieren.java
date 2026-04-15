@@ -2,7 +2,11 @@ package bankprojekt.spielereien;
 
 import java.time.LocalDate;
 import bankprojekt.basisdaten.*;
+
+import java.util.Arrays;
 import java.util.Scanner;
+
+import static java.util.Arrays.sort;
 
 /**
  * Klasse, um ein paar Konten und Kunden zu sortieren und Arrays.sort
@@ -34,7 +38,30 @@ public class KundenUndKontenSortieren {
 		
 		Kunde[] kunden = {hans, otto, sabrina, doro, miriam, ernst};
 		Konto[] konten = {eins, zwei, drei, vier, fuenf, sechs};
-		
-	}
 
+		//Kunden werden sortiert nach Vorname -> Nachname -> Adresse -> Geburtstag
+		System.out.println("Kunden:");
+		Arrays.sort(kunden);
+		System.out.println(Arrays.toString(kunden));
+		System.out.println();
+
+		System.out.println("Konten nach Kontonummer:");
+		//Konten werden nach Kontonummer sortiert (aufsteigend, "natürlich Ordnung")
+		Arrays.sort(konten);
+		System.out.println(Arrays.toString(konten));
+		System.out.println();
+
+		//Konten werden nach Geburtsdatum des Inhabers sortiert (aufsteigend)
+		System.out.println("Konten nach Geburtstag des Inhabers:");
+		Arrays.sort(konten, Konto.BY_GEBURTSTAG);
+		System.out.println(Arrays.toString(konten));
+		System.out.println();
+
+		//Konten werden nach Iban sortiert
+		System.out.println("Konten nach Iban:");
+		Arrays.sort(konten, Konto.byIban(blz));
+		System.out.println(Arrays.toString(konten));
+
+
+    }
 }

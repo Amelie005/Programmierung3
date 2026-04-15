@@ -75,22 +75,38 @@ class SparbuchTest {
     @Test
     void testAbhebenNeuerMonatWirdGezaehlt() throws exceptions.GesperrtException {
 
-        //gestellter Kalender der immer einen anderen Monat zurückgibt
-        Kalender kalenderNeuerMonat = new Kalender() {
+        //erstellen eines veränderbaren Kalenders
+        class VerstellbarerKalender extends Kalender {
+            LocalDate datum = LocalDate.of(2099, 5, 1); // Wir starten im Mai
             @Override
             public LocalDate getHeutigesDatum() {
-                return LocalDate.of(2099, 6, 1);
+                return datum;
             }
-        };
+        }
+        VerstellbarerKalender meinKalender = new VerstellbarerKalender();
 
-        Sparbuch neuesSparbuch = new Sparbuch(testInhaber, 87654321L, kalenderNeuerMonat);
+        //Sparbuch erstellen und füllen
+        Sparbuch neuesSparbuch = new Sparbuch(testInhaber, 87654321L, meinKalender);
         neuesSparbuch.einzahlen(new Geldbetrag(5000));
 
-        neuesSparbuch.abheben(new Geldbetrag(2000)); //erstes mal Abheben im "neuen" Monat
-        boolean result = neuesSparbuch.abheben(new Geldbetrag(1)); //sollte fehlschlagen
+        // Initialisierung: Einmal im Mai abheben, damit "zeitpunkt" im Objekt auf Mai steht
+        neuesSparbuch.abheben(new Geldbetrag(10));
 
-        //Fehler: mit Original-Code wird false erwartet aber true zurückgegeben, weil bereitsAbgehoben nach der ersten Abhebung auf 0 zurückgesetzt wird
-        assertFalse(result, "Nach 2000€ Abhebung darf kein weiterer Betrag abgehoben werden");
+        //Jetzt stellen wir den Kalender auf Juni um
+        meinKalender.datum = LocalDate.of(2099, 6, 1);
+
+        //Erstes Abheben im JUNI (Maximum ausschöpfen)
+        //ALTER CODE: Prüft Limit -> OK -> Setzt bereitsAbgehoben auf 2000 -> Reset auf 0 (weil neuer Monat)!
+        //NEUER CODE: Reset auf 0 (wegen neuem Monat) -> Prüft Limit -> OK -> Setzt bereitsAbgehoben auf 2000.
+        neuesSparbuch.abheben(new Geldbetrag(2000));
+
+        //zweites Abheben im JUNI (darf nicht funktionieren!)
+        boolean result = neuesSparbuch.abheben(new Geldbetrag(1));
+
+        //Auswertung:
+        // Der alte Code liefert hier TRUE (Fehler!), weil der Zähler oben resettet wurde
+        // Der neue Code liefert hier FALSE (Korrekt!), weil der Zähler bei 2000 steht
+        assertFalse(result, "Nachdem im neuen Monat bereits 2000€ abgehoben wurden, darf kein weiterer Euro abgehoben werden.");
     }
 }
 

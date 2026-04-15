@@ -1,6 +1,7 @@
 package bankprojekt.basisdaten;
 
 import java.math.BigInteger;
+import java.util.Comparator;
 
 import exceptions.GesperrtException;
 import exceptions.UngueltigeKontonummerException;
@@ -8,7 +9,7 @@ import exceptions.UngueltigeKontonummerException;
 /**
  * stellt ein allgemeines Bank-Konto dar
  */
-public abstract class Konto
+public abstract class Konto implements Comparable<Konto>
 {
 	/**
 	 * die Kontonummer
@@ -238,5 +239,46 @@ public abstract class Konto
 	public int hashCode()
 	{
 		return 31 + (int) (this.nummer ^ (this.nummer >>> 32));
+	}
+
+	/**
+	 * Vergleicht dieses Konto mit einem anderen Konto.
+	 * Die Sortierung erfolgt in der "natürlichen Ordnung" aufsteigend anhand der Kontonummer.
+	 * @param other das zu vergleichende Konto
+	 * @return eine negative Zahl, wenn this Konto eine kleinere Nummer hat,
+	 * null bei gleicher Nummer, oder eine positive Zahl, wenn die Nummer größer ist
+	 */
+	@Override
+	public int compareTo(Konto other) {
+		return Long.compare(this.getKontonummer(), other.getKontonummer());
+	}
+
+	/**
+	 * Ein Vergleicher, der Konten nach dem Geburtsdatum ihrer Inhaber sortiert.
+	 */
+	public static final Comparator<Konto> BY_GEBURTSTAG =
+			new Comparator<Konto>() {
+				@Override
+				public int compare(Konto k1, Konto k2) {
+					return k1.getInhaber().getGeburtstag()
+							.compareTo(k2.getInhaber().getGeburtstag());
+				}
+			};
+
+	/**
+	 * Erzeugt einen Vergleicher, der Konten anhand ihrer IBAN sortiert.
+	 * Da die IBAN zur Laufzeit unter Angabe einer Bankleitzahl berechnet wird,
+	 * liefert diese Methode einen spezialisierten Comparator für die angegebene BLZ.
+	 * @param blz die Bankleitzahl, die für den Vergleich der IBANs genutzt werden soll
+	 * @return ein Comparator-Objekt für den IBAN-Vergleich
+	 */
+	public static Comparator<Konto> byIban(final long blz) {
+		return new Comparator<Konto>() {
+			@Override
+			public int compare(Konto k1, Konto k2) {
+				// Hier wird die blz genutzt, die von "außen" kommt
+				return k1.getIban(blz).compareTo(k2.getIban(blz));
+			}
+		};
 	}
 }

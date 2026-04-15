@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author Dorothea Hubrich
  */
 @SuppressWarnings("unused")
-public class Kunde {
+public class Kunde implements Comparable<Kunde> {
 
 	/**
 	 * Ein Musterkunde
@@ -229,5 +229,20 @@ public class Kunde {
 			ANREDE = "Hallo Benutzer!";
 		else
 			ANREDE = "Dear Customer!";
+	}
+
+	/**
+	 * Vergleicht diesen Kunden mit einem anderen Kunden:
+	 * Die Sortierung erfolgt alphabetisch nach dem Namen (Nachname, Vorname).
+	 * Diese Implementierung ist konsistent zu {@link #equals(Object)}, da beide
+	 * auf der Methode {@link #getName()} basieren
+	 * @param other der zu vergleichende Kunde
+	 * @return ein negativer Wert, null oder ein positiver Wert, je nach Reihenfolge
+	 */
+	@Override
+	public int compareTo(Kunde other) {
+		//da equals() und hashCode() bereits getName() nutzen,
+		//ist dies die "natürliche" Sortierung für den Kunden
+		return this.getName().compareTo(other.getName());
 	}
 }

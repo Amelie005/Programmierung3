@@ -10,34 +10,34 @@ class VektorTest {
     //Konstruktor 1
 
     @Test
-    void konstruktor_normfall_positiveKoordinaten() {
+    void konstruktorNormfallPositiveKoordinaten() {
         Vektor v = new Vektor(3.0, 4.0);
         assertEquals(3.0, v.getX());
         assertEquals(4.0, v.getY());
     }
 
     @Test
-    void konstruktor_grenzfall_nullvektor() {
+    void konstruktorGrenzfallNullvektor() {
         Vektor v = new Vektor(0.0, 0.0);
         assertEquals(0.0, v.getX());
         assertEquals(0.0, v.getY());
     }
 
     @Test
-    void konstruktor_grenzfall_negativKoordinaten() {
+    void konstruktorGrenzfallNegativKoordinaten() {
         Vektor v = new Vektor(-3.0, -4.0);
         assertEquals(-3.0, v.getX());
         assertEquals(-4.0, v.getY());
     }
 
     @Test
-    void konstruktor_fehlerfall_NaN() {
+    void konstruktorFehlerfallNaN() {
         assertThrows(IllegalArgumentException.class, () -> new Vektor(Double.NaN, 1.0));
         assertThrows(IllegalArgumentException.class, () -> new Vektor(1.0, Double.NaN));
     }
 
     @Test
-    void konstruktor_fehlerfall_unendlich() {
+    void konstruktorFehlerfallUnendlich() {
         assertThrows(IllegalArgumentException.class, () -> new Vektor(Double.POSITIVE_INFINITY, 1.0));
         assertThrows(IllegalArgumentException.class, () -> new Vektor(1.0, Double.NEGATIVE_INFINITY));
     }
@@ -45,46 +45,46 @@ class VektorTest {
     //Konstruktor 2
 
     @Test
-    void konstruktor2_normfall_90Grad() {
+    void konstruktor2Normfall90Grad() {
         Vektor v = new Vektor(5.0, new Winkel(90.0));
         assertEquals(0.0, v.getX(), 1e-9);
         assertEquals(5.0, v.getY(), 1e-9);
     }
 
     @Test
-    void konstruktor2_grenzfall_0Grad() {
+    void konstruktor2GrenzfallGrad() {
         Vektor v = new Vektor(5.0, new Winkel(0.0));
         assertEquals(5.0, v.getX(), 1e-9);
         assertEquals(0.0, v.getY(), 1e-9);
     }
 
     @Test
-    void konstruktor2_fehlerfall_winkelNull() {
+    void konstruktor2FehlerfallWinkelNull() {
         assertThrows(NullPointerException.class, () -> new Vektor(5.0, null));
     }
 
     @Test
-    void konstruktor2_fehlerfall_negativeLaenge() {
+    void konstruktor2FehlerfallNegativeLaenge() {
         assertThrows(IllegalArgumentException.class, () -> new Vektor(-5.0, new Winkel(90.0)));
     }
 
     // getLaenge()
 
     @Test
-    void getLaenge_normfall_pythagoras() {
+    void getLaengeNormfallPythagoras() {
         Vektor v = new Vektor(3.0, 4.0);
         assertEquals(5.0, v.getBetrag(), 1e-9);
     }
 
     @Test
-    void getLaenge_grenzfall_nullvektor() {
+    void getLaengeGrenzfallNullvektor() {
         assertEquals(0.0, Vektor.NULLVEKTOR.getBetrag(), 1e-9);
     }
 
     //addieren()
 
     @Test
-    void addieren_normfall() {
+    void addierenNormfall() {
         Vektor v1 = new Vektor(1.0, 2.0);
         Vektor v2 = new Vektor(3.0, 4.0);
         Vektor ergebnis = v1.addieren(v2);
@@ -93,7 +93,7 @@ class VektorTest {
     }
 
     @Test
-    void addieren_grenzfall_mitNullvektor() {
+    void addierenGrenzfallMitNullvektor() {
         Vektor v = new Vektor(3.0, 4.0);
         Vektor ergebnis = v.addieren(Vektor.NULLVEKTOR);
         assertEquals(v.getX(), ergebnis.getX(), 1e-9);
@@ -101,7 +101,7 @@ class VektorTest {
     }
 
     @Test
-    void addieren_fehlerfall_null() {
+    void addierenFehlerfallNull() {
         Vektor v = new Vektor(1.0, 2.0);
         assertThrows(NullPointerException.class, () -> v.addieren(null));
     }
@@ -109,21 +109,21 @@ class VektorTest {
     //skalarprodukt()
 
     @Test
-    void skalarprodukt_normfall() {
+    void skalarproduktNormfall() {
         Vektor v1 = new Vektor(3.0, 4.0);
         Vektor v2 = new Vektor(1.0, 2.0);
         assertEquals(11.0, v1.skalarprodukt(v2), 1e-9); // 3*1 + 4*2
     }
 
     @Test
-    void skalarprodukt_grenzfall_orthogonaleVektoren() {
+    void skalarproduktGrenzfallOrthogonaleVektoren() {
         Vektor v1 = new Vektor(1.0, 0.0);
         Vektor v2 = new Vektor(0.0, 1.0);
         assertEquals(0.0, v1.skalarprodukt(v2), 1e-9); // orthogonal → 0
     }
 
     @Test
-    void skalarprodukt_fehlerfall_null() {
+    void skalarproduktFehlerfallNull() {
         Vektor v = new Vektor(1.0, 2.0);
         assertThrows(NullPointerException.class, () -> v.skalarprodukt(null));
     }
@@ -131,20 +131,20 @@ class VektorTest {
     //orthogonalerEinheitsvektor()
 
     @Test
-    void einheitsvektor_normfall_laengeIst1() {
+    void einheitsvektorNormfallLaengeIst1() {
         Vektor v = new Vektor(3.0, 4.0);
         assertEquals(1.0, v.orthogonalerEinheitsvektor().getBetrag(), 1e-9);
     }
 
     @Test
-    void einheitsvektor_normfall_istOrtogonal() {
+    void einheitsvektorNormfallIstOrthogonal() {
         Vektor v = new Vektor(3.0, 4.0);
         // Skalarprodukt mit Original muss 0 sein
         assertEquals(0.0, v.skalarprodukt(v.orthogonalerEinheitsvektor()), 1e-9);
     }
 
     @Test
-    void einheitsvektor_fehlerfall_nullvektor() {
+    void einheitsvektorFehlerfallNullvektor() {
         assertThrows(ArithmeticException.class,
                 () -> Vektor.NULLVEKTOR.orthogonalerEinheitsvektor());
     }

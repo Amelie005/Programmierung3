@@ -1,4 +1,8 @@
-package Uebung1.automat;
+package automat;
 
 public interface EndlicherAutomat {
+
+    default boolean testen(String zeichenkette) {
+
+    }
 }

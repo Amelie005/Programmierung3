@@ -115,6 +115,35 @@ public class Sparbuch extends Konto {
 		else
 			return false;
 	}
+
+	//Alte abheben() Methode
+	/*@Override
+	public boolean abheben (Geldbetrag betrag) throws GesperrtException{
+		if (betrag == null || betrag.isNegativ()) {
+			throw new IllegalArgumentException("Betrag ungültig");
+		}
+		if(this.isGesperrt())
+		{
+			GesperrtException e = new GesperrtException(this.getKontonummer());
+			throw e;
+		}
+		Geldbetrag neu = getKontostand().minus(betrag);
+		if (neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
+				bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME)<= 0)
+		{
+			setKontostand(neu);
+			bereitsAbgehoben = bereitsAbgehoben.plus(betrag);
+			LocalDate heute = kalender.getHeutigesDatum();
+			if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear())
+			{
+				this.bereitsAbgehoben = Geldbetrag.NULL_EURO;
+			}
+			this.zeitpunkt = heute;
+			return true;
+		}
+		else
+			return false;
+	}*/
 	
 	@Override
 	public String toString()
