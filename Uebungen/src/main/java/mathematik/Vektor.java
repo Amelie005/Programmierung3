@@ -1,6 +1,6 @@
-package Uebung0.mathematik;
+package mathematik;
 
-import Uebung0.trigonometrie.Winkel;
+import trigonometrie.Winkel;
 
 /**
  * Klasse zur Speicherung eines Vektors im zweidimensionalen Raum.

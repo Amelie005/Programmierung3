@@ -1,4 +1,4 @@
-package Pflichtuebungen.Uebung0.mathematik;
+package mathematik;
 
 import org.junit.jupiter.api.Test;
 import trigonometrie.Winkel;
