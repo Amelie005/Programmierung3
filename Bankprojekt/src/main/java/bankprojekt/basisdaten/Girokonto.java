@@ -113,4 +113,25 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     	+ "Dispo: " + this.dispo;
     	return ausgabe;
     }
+
+	/**
+	 * Wechselt die Währung, in der das Konto geführt wird.
+	 * Dabei wird der Kontostand und auch der Dispo in die neue Währung umgerechnet.
+	 * @param neu die neue Zielwährung
+	 * @throws IllegalArgumentException  wenn die Währung null ist
+	 */
+	@Override
+	public void waehrungswechsel(Waehrung neu) {
+		super.waehrungswechsel(neu); //Rechnet den Kontostand um
+		this.dispo = this.dispo.umrechnen(neu); //Rechnet den Dispo um
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @throws IllegalArgumentException wenn der Betrag null oder negativ ist
+	 */
+	@Override
+	public void einzahlen(Geldbetrag betrag) {
+		super.einzahlen(betrag);
+	}
 }

@@ -46,7 +46,7 @@ public class KundenUndKontenSortieren {
 		System.out.println();
 
 		System.out.println("Konten nach Kontonummer:");
-		//Konten werden nach Kontonummer sortiert (aufsteigend, "natürlich Ordnung")
+		//Konten werden nach Kontonummer sortiert (aufsteigend, "natürliche Ordnung")
 		Arrays.sort(konten);
 		System.out.println(Arrays.toString(konten));
 		System.out.println();

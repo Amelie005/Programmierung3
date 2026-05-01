@@ -281,4 +281,18 @@ public abstract class Konto implements Comparable<Konto>
 			}
 		};
 	}
+
+	/**
+	 * Wechselt die Währung, in der das Konto geführt wird.
+	 * Dabei wird der Kontostand in die neue Währung umgerechnet.
+	 * @param neu die neue Zielwährung
+	 * @throws IllegalArgumentException  wenn die Währung null ist
+	 */
+	public void waehrungswechsel(Waehrung neu) {
+		if (neu == null) {
+			throw new IllegalArgumentException("Währung darf nicht null sein");
+		}
+		//Kontostand umrechnen
+		this.setKontostand(this.getKontostand().umrechnen(neu));
+	}
 }

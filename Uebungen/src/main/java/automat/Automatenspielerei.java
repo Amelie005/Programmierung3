@@ -1,4 +1,6 @@
-package Uebung1.automat;
+package automat;
+
+import automat.Bezeichnerautomat;
 
 /**
  * Test für EndlicherAutomat

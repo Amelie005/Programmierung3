@@ -1,6 +1,7 @@
 package bankprojekt.basisdaten;
 
 import java.util.Objects;
+import org.decimal4j.util.DoubleRounder;
 
 /**
  * Ein Geldbetrag mit Währung
@@ -10,7 +11,12 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
 	 * 0 €
 	 */
 	public static final Geldbetrag NULL_EURO = new Geldbetrag(0);
-	
+
+	/**
+	 * Währung die genutzt werden soll
+	 */
+	public Waehrung waehrung;
+
 	/**
 	 * Betrag in der in waehrung angegebenen Währung
 	 */
@@ -24,8 +30,44 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
 	public Geldbetrag(double betrag)
 	{
 		if(!Double.isFinite(betrag))
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Betrag muss endlich sein!");
 		this.betrag = betrag;
+		this.waehrung = Waehrung.EURO;
+	}
+
+	/**
+	 * erstellt einen Geldbetrag in der angegebenen Währung.
+	 * @param betrag gewünschter Geldbetrag
+	 * @param w gewünschte Währung
+	 * @throws IllegalArgumentException  wenn betrag unendlich oder NaN ist
+	 */
+	public Geldbetrag(double betrag, Waehrung w) {
+		if(!Double.isFinite(betrag))
+			throw new IllegalArgumentException("Betrag muss endlich sein!");
+		if(w == null) {
+			throw new IllegalArgumentException("Währung darf nicht null sein!");
+		}
+		this.betrag = betrag;
+		this.waehrung = w;
+	}
+
+	/**
+	 * Rechnet den aktuellen Geldbetrag in eine andere Währung um.
+	 * @param zielWaehrung Währung, in die der akteulle Betrag umgerechnet werden soll
+	 * @return umgerechneter Betrag
+	 */
+	public Geldbetrag umrechnen (Waehrung zielWaehrung) {
+		if (this.waehrung == zielWaehrung) {
+			//Betrag würde sich nicht ändern
+			return new Geldbetrag(this.betrag, this.waehrung);
+		} else {
+			//zuerst in Euro umrechnen, dann in Zielwährung
+			double betragInEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
+			double zielBetrag = betragInEuro * zielWaehrung.getUmrechnungskursZuEuro();
+			//auf 2 Nachkommastellen runden
+			double gerundet = DoubleRounder.round(zielBetrag, 2);
+			return new Geldbetrag(gerundet, zielWaehrung);
+		}
 	}
 
 	/**
@@ -55,7 +97,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
 	{
 		if(summand == null)
 			throw new IllegalArgumentException();
-		return new Geldbetrag(this.betrag + summand.betrag);
+		//Summand in eigene Währung umrechnen
+		Geldbetrag umgerechnet = summand.umrechnen(this.waehrung);
+		//Konstruktor mit Währung nutzen
+		return new Geldbetrag(this.betrag + umgerechnet.getBetrag(), this.waehrung);
 	}
 	
 	/**
@@ -68,7 +113,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
 	{
 		if(subtrahend == null)
 			throw new IllegalArgumentException();
-		return new Geldbetrag(this.betrag - subtrahend.betrag);
+		//Subtrahend in eigene Währung umrechnen
+		Geldbetrag umgerechnet = subtrahend.umrechnen(this.waehrung);
+		//Konstruktor mit Währung nutzen
+		return new Geldbetrag(this.betrag - umgerechnet.getBetrag(), this.waehrung);
 	}
 
 	/**
@@ -81,12 +129,24 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
 	{
 		if(!Double.isFinite(faktor))
 			throw new IllegalArgumentException();
-		return new Geldbetrag(this.betrag * faktor);
+		//Konstruktor mit Währung nutzen
+		return new Geldbetrag(this.betrag * faktor, this.waehrung);
 	}
 
+	/**
+	 * Vergleicht zwei Beträge miteinander.
+	 * @param o der Betrag der verglichen werden soll
+	 * @return -1, wenn this größer ist, 0, wenn beide gleich sind, 1, wenn o größer ist
+	 * @throws NullPointerException  wenn der zu vergleichende Betrag null ist
+	 */
 	@Override
 	public int compareTo(Geldbetrag o) {
-		return Double.compare(this.betrag, o.betrag);
+		if (o == null) {
+			throw new NullPointerException("Betrag darf nicht null sein!");
+		}
+		//Umrechnen vor dem Vergleichen
+		Geldbetrag umgerechnet = o.umrechnen(this.waehrung);
+		return Double.compare(this.betrag, umgerechnet.getBetrag());
 	}
 
 	@Override
@@ -94,17 +154,21 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
 	{
 		if(!(o instanceof Geldbetrag)) return false;
 		if(o == this) return true;
-		return this.compareTo((Geldbetrag) o) == 0;
+		Geldbetrag other  = (Geldbetrag)o;
+		//Gleichheit bei Währung und Betrag
+		return this.waehrung == other.waehrung && Double.compare(this.betrag, other.betrag) == 0;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.getBetrag());
+		//HashCode bezieht Betrag und Währung ein
+		return Objects.hash(this.getBetrag(), this.waehrung);
 	}
 	
 	@Override
 	public String toString()
 	{
-		return String.format("%,.2f €", this.betrag);
+		//dynamische Währungsausgabe
+		return String.format("%,.2f %s", this.betrag, this.waehrung.toString());
 	}
 }
