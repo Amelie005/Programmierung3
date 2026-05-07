@@ -1,7 +1,7 @@
 package bankprojekt.basisdaten;
 
-import exceptions.GesperrtException;
-import exceptions.UngueltigeKontonummerException;
+import bankprojekt.exceptions.GesperrtException;
+import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
  * ein Bank-Konto, das Absender und Ziel von Überweisungen

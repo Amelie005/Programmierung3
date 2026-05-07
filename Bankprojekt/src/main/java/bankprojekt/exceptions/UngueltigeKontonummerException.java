@@ -1,4 +1,4 @@
-package exceptions;
+package bankprojekt.exceptions;
 
 /**
  * tritt auf, wenn versucht wird, eine ungültige Kontonummer (also

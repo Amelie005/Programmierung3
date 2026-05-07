@@ -2,8 +2,8 @@ package bankprojekt.basisdaten;
 
 import java.time.LocalDate;
 
-import exceptions.GesperrtException;
-import exceptions.UngueltigeKontonummerException;
+import bankprojekt.exceptions.GesperrtException;
+import bankprojekt.exceptions.UngueltigeKontonummerException;
 import bankprojekt.nuetzliches.Kalender;
 
 /**

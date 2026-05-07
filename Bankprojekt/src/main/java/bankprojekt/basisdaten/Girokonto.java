@@ -1,7 +1,7 @@
 package bankprojekt.basisdaten;
 
-import exceptions.GesperrtException;
-import exceptions.UngueltigeKontonummerException;
+import bankprojekt.exceptions.GesperrtException;
+import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
  * Ein Girokonto, d.h. ein Konto mit einem Dispo und der Fähigkeit,
@@ -63,11 +63,7 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
 	}
 	
 	@Override
-    public boolean ueberweisungAbsenden(Geldbetrag betrag, 
-    		String empfaenger, long nachKontonr, 
-    		long nachBlz, String verwendungszweck) 
-    				throws GesperrtException 
-    {
+    public boolean ueberweisungAbsenden(Geldbetrag betrag, String empfaenger, long nachKontonr, long nachBlz, String verwendungszweck) throws GesperrtException {
       if (this.isGesperrt())
             throw new GesperrtException(this.getKontonummer());
         if (betrag == null || betrag.isNegativ()|| empfaenger == null || verwendungszweck == null)

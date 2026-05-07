@@ -3,8 +3,8 @@ package bankprojekt.basisdaten;
 import java.math.BigInteger;
 import java.util.Comparator;
 
-import exceptions.GesperrtException;
-import exceptions.UngueltigeKontonummerException;
+import bankprojekt.exceptions.GesperrtException;
+import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
  * stellt ein allgemeines Bank-Konto dar

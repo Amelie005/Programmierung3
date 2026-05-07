@@ -1,4 +1,4 @@
-package exceptions;
+package bankprojekt.exceptions;
 
 /**
  * tritt bei einem schädigenden Zugriff auf ein gesperrtes Konto auf
