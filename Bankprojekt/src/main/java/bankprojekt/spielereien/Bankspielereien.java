@@ -1,7 +1,10 @@
 package bankprojekt.spielereien;
 
 import java.time.LocalDate;
+import java.util.Map;
+import java.util.SortedSet;
 
+import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.verwaltung.Bank;
@@ -42,6 +45,75 @@ public class Bankspielereien {
 		long nrMama4 = bank.girokontoErstellen(mama);
 		long nrPapa = bank.girokontoErstellen(papa);
 		long nrSenior = bank.girokontoErstellen(senior);
-		
+
+		//getBankleitzahl()
+		System.out.println("Bankleitzahl dieser Bank: " + bank.getBankleitzahl());
+
+		//Einzahlen & Abheben
+		System.out.println("Tests Einzahlen & Abheben:");
+		bank.geldEinzahlen(nrOpa1, new Geldbetrag(1000.0));
+		bank.geldEinzahlen(nrOpa1, new Geldbetrag(500.0)); //Kontostand: 1500
+		System.out.println("Kontostand Opa1 (erwartet 1500): " + bank.getKontostand(nrOpa1));
+
+		boolean abhebenErfolgreich = bank.geldAbheben(nrOpa1, new Geldbetrag(200.0));
+		System.out.println("Abheben von 200€ erfolgreich: " + abhebenErfolgreich);
+		System.out.println("Kontostand Opa1 (erwartet 1300): " + bank.getKontostand(nrOpa1));
+
+        //Fehlerfall: Abheben von nicht existierendem Konto
+		boolean abhebenFehler = bank.geldAbheben(999999L, new Geldbetrag(10.0));
+		System.out.println("Abheben von nicht existierendem Konto (erwartet false): " + abhebenFehler);
+
+		//Überweisungen
+		System.out.println("\nTests Überweisung:");
+		bank.geldEinzahlen(nrMama1, new Geldbetrag(100.0));
+
+		//Mama überweist an Papa
+		boolean ueberweisung = bank.geldUeberweisen(nrMama1, nrPapa, new Geldbetrag(50.0), "Essen");
+
+		System.out.println("Überweisung erfolgreich: " + ueberweisung);
+		System.out.println("Mamas Kontostand (erwartet 50): " + bank.getKontostand(nrMama1));
+		System.out.println("Papas Kontostand (erwartet 50): " + bank.getKontostand(nrPapa));
+
+		//Map
+		System.out.println("\nTests Gesamt-Kontostände Map:");
+
+		//Opa auf weiteres Konto Geld einzahlen
+		bank.geldEinzahlen(nrOpa2, new Geldbetrag(100.0));
+		//Opa hat nun: nrOpa1 (1300) + nrOpa2 (100) = 1400
+
+		Map<Kunde, Geldbetrag> stand = bank.getGesamtKontostaende();
+		System.out.println("Gesamtstand Opa (erwartet 1400): " + stand.get(opa));
+		System.out.println("Anzahl Kunden in der Map: " + stand.size());
+
+		//Löschen
+		System.out.println("\nTests Löschen:");
+
+		//ein einziges Konto löschen
+		boolean geloescht = bank.kontoLoeschen(nrSenior);
+		System.out.println("Konto von Senior gelöscht: " + geloescht);
+		System.out.println("Existiert es noch?(sollte Exception werfen):");
+		try {
+			bank.getKontostand(nrSenior);
+		} catch (IllegalArgumentException e) {
+			System.out.println(e.getMessage());
+		}
+
+		//alle Konten von Mama löschen
+		int anzahlMama = bank.kontenEinesKundenLoeschen(mama);
+		System.out.println("Anzahl gelöschter Konten von Mama (erwartet 4): " + anzahlMama);
+
+		//Dispo Limit überschritten
+		System.out.println("\nTest Überziehung des Dispo:");
+		boolean zuViel = bank.geldAbheben(nrPapa, new Geldbetrag(10000.0));
+		System.out.println("Abheben von 10.000€ (erwartet false): " + zuViel);
+
+		//Sortierung der Kunden überprüfen
+		System.out.println("\nTest Kundensortierung:");
+		SortedSet<Kunde> kunden = bank.getAlleKunden();
+		System.out.println("Kunden absteigend nach Geburtstag:");
+		for(Kunde k : kunden) {
+			System.out.println(k.getGeburtstag() + " : " + k.getName());
+		}
+
 	}
 }

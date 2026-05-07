@@ -1,5 +1,6 @@
 package bankprojekt.basisdaten;
 
+import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.nuetzliches.Kalender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ class SparbuchTest {
 
     //Test 1: erfolgreiches abheben ohne Grenzfall
     @Test
-    void testAbhebenErfolgreich() throws exceptions.GesperrtException {
+    void testAbhebenErfolgreich() throws GesperrtException {
         boolean result = sparbuch.abheben(new Geldbetrag(100));
         assertTrue(result, "Abheben erfolgreich.");
         assertEquals(new Geldbetrag(4900), sparbuch.getKontostand());
@@ -30,7 +31,7 @@ class SparbuchTest {
 
     //Test 2: erfolgreiches abheben, aber mit Grenzfall (genau 2000€ abgehoben)
     @Test
-    void testAbhebenUntereGrenze() throws exceptions.GesperrtException {
+    void testAbhebenUntereGrenze() throws GesperrtException {
         boolean result = sparbuch.abheben(new Geldbetrag(2000));
         assertTrue(result);
         assertEquals(new Geldbetrag(3000), sparbuch.getKontostand());
@@ -38,7 +39,7 @@ class SparbuchTest {
 
     //Test 3: Monatslimit von 2000€ überschritten -> muss false liefern
     @Test
-    void testAbhebenMonatslimitUeberschritten() throws exceptions.GesperrtException {
+    void testAbhebenMonatslimitUeberschritten() throws GesperrtException {
         sparbuch.abheben(new Geldbetrag(2000));
         boolean result = sparbuch.abheben(new Geldbetrag(1));
         assertFalse(result);
@@ -46,7 +47,7 @@ class SparbuchTest {
 
     //Test 4: Grenzfall, denn Kontostand würde unter 0.50€ fallen -> muss false liefern
     @Test
-    void testAbhebenUnterMinimum() throws exceptions.GesperrtException {
+    void testAbhebenUnterMinimum() throws GesperrtException {
         boolean result = sparbuch.abheben(new Geldbetrag(4999.51));
         assertFalse(result);
     }
@@ -55,7 +56,7 @@ class SparbuchTest {
     @Test
     void testAbhebenGesperrt() {
         sparbuch.sperren();
-        assertThrows(exceptions.GesperrtException.class, () -> sparbuch.abheben(new Geldbetrag(100)));
+        assertThrows(GesperrtException.class, () -> sparbuch.abheben(new Geldbetrag(100)));
     }
 
     //Test 6: Fehlerfall; null-Betrag muss IllegalArgumentException werfen
@@ -73,7 +74,7 @@ class SparbuchTest {
     //Dieser Test schlägt mit dem Original-Code fehl!!!
     //Test 8: Abhebung in einem neuen Monat muss korrekt gezählt werden
     @Test
-    void testAbhebenNeuerMonatWirdGezaehlt() throws exceptions.GesperrtException {
+    void testAbhebenNeuerMonatWirdGezaehlt() throws GesperrtException {
 
         //erstellen eines veränderbaren Kalenders
         class VerstellbarerKalender extends Kalender {

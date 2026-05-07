@@ -20,7 +20,7 @@ public class KundenUndKontenSortieren {
 	public static void main(String[] args) {
 		Scanner tastatur = new Scanner(System.in);
 		System.out.println("Bitte Bankleitzahl eingeben: ");
-		long blz = tastatur.nextLong();  //ohne große Fehlerbehandlung...
+		long blz = tastatur.nextLong();  //ohne große Fehlerbehandlung ...
 
 		Kunde hans = new Kunde("Hans", "Meier", "Unterm Regenbogen 19", LocalDate.of(1990, 1, 5));
 		Kunde otto = new Kunde("Otto", "Kar", "Hoch über den Wolken 7", LocalDate.of(1992, 2, 25));
@@ -39,7 +39,7 @@ public class KundenUndKontenSortieren {
 		Kunde[] kunden = {hans, otto, sabrina, doro, miriam, ernst};
 		Konto[] konten = {eins, zwei, drei, vier, fuenf, sechs};
 
-		//Kunden werden sortiert nach Vorname -> Nachname -> Adresse -> Geburtstag
+		//Kunden werden sortiert nach Vorname → Nachname → Adresse → Geburtstag
 		System.out.println("Kunden:");
 		Arrays.sort(kunden);
 		System.out.println(Arrays.toString(kunden));

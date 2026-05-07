@@ -3,6 +3,7 @@ package bankprojekt.basisdaten;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -222,7 +223,9 @@ public class Kunde implements Comparable<Kunde> {
 		return Objects.hash(this.getName());
 	}
 
-
+	//Für eigenes Verständnis:
+	//Setzt die Begrüßung einmalig beim Laden der Klasse,
+	//abhängig vom System-Locale (DE = Deutsch, sonst Englisch)
 	static
 	{
 		if(Locale.getDefault().getCountry().equals("DE"))
@@ -245,4 +248,5 @@ public class Kunde implements Comparable<Kunde> {
 		//ist dies die "natürliche" Sortierung für den Kunden
 		return this.getName().compareTo(other.getName());
 	}
+
 }
