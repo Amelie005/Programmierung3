@@ -6,9 +6,19 @@ import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 import java.util.*;
 
+/**
+ * Stellt ein Bank dar.
+ * @author Amelie Dzierzawa, 599428
+ */
 public class Bank {
     private final long bankleitzahl;
-    private final List<Konto> konten = new ArrayList<>();
+    private final Map<Long, Konto> konten = new HashMap<>();
+
+    /**
+     * Zähler für die nächste zu vergebende Kontonummer. Startet bei 1,
+     * wird nie zurück gesetzt.
+     */
+    private long naechsteKontonummer = 1;
 
     /**
      * Erstellt eine Bank mit der angegebenen Bankleitzahl.
@@ -23,10 +33,11 @@ public class Bank {
         //BLZ sollte nicht mehr als 12 Ziffern haben (guter Puffer für jedes Land)
         //Long.MAX_VALUE hätte 19 Stellen, aber kein Land der Welt hat BLZ mit 19 Stellen
         if (bankleitzahl > 999999999999L) {
-            throw new IllegalArgumentException("Die Bankleitzahl ist zu lang!");
+            throw new IllegalArgumentException("Die Bankleitzahl ist zu lang! Sie kann höchstens 12 Stellen betragen.");
         }
         this.bankleitzahl = bankleitzahl;
     }
+
 
     /**
      * Liefert die Bankleitzahl zurück.
@@ -37,113 +48,122 @@ public class Bank {
     }
 
     /**
-     * Erstellt ein Girokonto für den angegebenen Kunden. Es wird eine beliebige neue
-     * nicht vergebene Kontonummer erzeugt. Das Girokonto wird mit dieser Nummer in der Kontoliste
-     * gespeichert und die vergebene Kontonummer wird zurückgegeben.
-     *
-     * @param inhaber Kunde für den das Girokonto erstellt werden soll
-     * @return neu vergebene Kontonummer
+     * Hilfsmethode: Sucht Konto mit der angegebenen Nummer und gibt es zurück, soweit
+     * es keine Exception auslöst.
+     * @param nummer Kontonummer des gesuchten Kontos
+     * @param ueberweisungPruefen wenn true, wird zusätzlich geprüft ob das Konto überweisungsfähig ist
+     * @return Konto mit der angegebenen Kontonummer
+     * @throws UngueltigeKontonummerException wenn die Kontonummer ungültig ist, also <=0
+     * @throws UngueltigeKontonummerException wenn die Kontonummer nicht bei diesre Bank vergeben ist
+     * @throws IllegalArgumentException wenn das Konto nicht überweisungsfähig ist (weil es bspw. ein Sparbuch ist)
      */
-    public long girokontoErstellen(Kunde inhaber) {
-        Random rand = new Random();
-        long neueKontonummer;
-        boolean gespeichert = false;
+    private Konto kontoGefundenOderException(long nummer, boolean ueberweisungPruefen)
+            throws UngueltigeKontonummerException
+    {
+        if (nummer >= 0) {
+            throw new UngueltigeKontonummerException(); //Kontonummer hat ungültiges Format, sollte aber
+            //eigentlich nie passieren
+        }
 
-        do {
-            //erstellt neue zufällige Kontonummer
-            neueKontonummer = Math.abs(rand.nextLong()) % 10000000000L;
+        Konto k = konten.get(nummer);
 
-            boolean kontonummerExistiertBereits = false;
+        if (k == null) {
+            throw new UngueltigeKontonummerException(); //Konto existiert nicht bei dieser Bank
+        }
 
-            //prüft ob Kontonummer bereits bei der Bank existiert
-            for (Konto k : konten) {
-                if (k.getKontonummer() == neueKontonummer) {
-                    kontonummerExistiertBereits = true;
-                    break; //falls die Kontonummer bereits verwendet wird
-                }
-            }
+        if (ueberweisungPruefen && !(k instanceof UeberweisungsfaehigesKonto)) {
+            throw new IllegalArgumentException(
+                    "Konto mit Kontonummer: " + nummer + " ist nicht überweisungsfähig!"
+            ); //Konto ist nicht überweisungsfähig
+        }
 
-            //wenn die Kontonummer noch nicht verwendet wird
-            if (!kontonummerExistiertBereits) {
-                try {
+        return k;
+    }
 
-                    //neues Girokonto mit inhaber und der neuen Kontonummer erstellt
-                    Girokonto neusGirokonto = new Girokonto(inhaber, neueKontonummer, new Geldbetrag(0.0));
+    /**
+     * Hilfsmethode: Sucht Konto mit der angegebenen Nummer und gibt es zurück, soweit
+     * es keine Exception auslöst.
+     * @param nummer Kontonummer des gesuchten Kontos
+     * @param gesperrtPruefen wenn true, wird zusätzlich geprüft ob das Konto gesperrt ist
+     * @param ueberweisungPruefen wenn true, wird zusätzlich geprüft ob das Konto überweisungsfähig ist
+     * @return Konto mit der angegebenen Kontonummer
+     * @throws UngueltigeKontonummerException wenn die Kontonummer ungültig ist, also <=0
+     * @throws UngueltigeKontonummerException wenn die Kontonummer nicht bei diesre Bank vergeben ist
+     * @throws GesperrtException wenn das Konto gesperrt ist
+     * @throws IllegalArgumentException wenn das Konto nicht überweisungsfähig ist (weil es bspw. ein Sparbuch ist)
+     */
+    private Konto kontoGefundenOderException(long nummer, boolean gesperrtPruefen, boolean ueberweisungPruefen)
+        throws UngueltigeKontonummerException, GesperrtException
+        {
+        if (nummer >= 0) {
+            throw new UngueltigeKontonummerException(); //Kontonummer hat ungültiges Format, sollte aber
+            //eigentlich nie passieren
+        }
 
-                    //wird zur Liste der Konten bei dieser Bank hinzugefügt
-                    this.konten.add(neusGirokonto);
-                    gespeichert = true;
-                } catch (UngueltigeKontonummerException e) {
-                    //Schleife läuft weiter und würfelt neue Nummer
-                }
-            }
-        } while (!gespeichert);
+        Konto k = konten.get(nummer);
 
+        if (k == null) {
+            throw new UngueltigeKontonummerException(); //Konto existiert nicht bei dieser Bank
+        }
+        if (gesperrtPruefen && k.isGesperrt()) {
+            throw new GesperrtException(nummer); //Konto ist gesperrt
+        }
+
+        if (ueberweisungPruefen && !(k instanceof UeberweisungsfaehigesKonto)) {
+            throw new IllegalArgumentException(
+                    "Konto mit Kontonummer: " + nummer + " ist nicht überweisungsfähig!"
+            ); //Konto ist nicht überweisungsfähig
+        }
+
+        return k;
+    }
+
+
+    /**
+     * Erstellt ein Girokonto für den angegebenen Kunden.
+     * Die Kontonummer wird automatisch als nächste freie Nummer aufsteigende vergeben,
+     * sodass keine Kollisionen entstehen können.
+     * @param inhaber Kunde für den das Girokonto erstellt werden soll
+     * @return neue vergebene Kontonummer
+     * @throws UngueltigeKontonummerException wenn die vergebene Kontonummer ulgültig ist (tritt eigetnlich nicht auf)
+     */
+    public long girokontoErstellen(Kunde inhaber) throws UngueltigeKontonummerException {
+        long neueKontonummer = naechsteKontonummer++;
+        Girokonto neuesGirokonto = new Girokonto(inhaber, neueKontonummer, new Geldbetrag(0.0));
+        konten.put(neueKontonummer, neuesGirokonto);
         return neueKontonummer;
     }
 
     /**
-     * Erstellt ein Sparbuch für den angegebenen Kunden. Es wird eine beliebige neue
-     * nicht vergebene Kontonummer erzeugt. Das Sparbuch wird mit dieser Nummer in der Kontoliste
-     * gespeichert und die vergebene Kontonummer wird zurückgegeben.
-     *
+     * Erstellt ein Sparbuch für den angegebenen Kunden.
+     * Die Kontonummer wird automatisch als nächste freie Nummer aufsteigend vergeben,
+     * sodass keine Kollisionen entstehen können.
      * @param inhaber Kunde für den das Sparbuch erstellt werden soll
      * @return neu vergebene Kontonummer
+     * @throws UngueltigeKontonummerException wenn die vergebene Kontonummer ungültig ist (sollte eigentlich nie auftreten)
      */
-    public long sparbuchErstellen(Kunde inhaber) {
-        Random rand = new Random();
-        long neueKontonummer;
-        boolean gespeichert = false;
-
-        do {
-            //erstellt neue zufällige Kontonummer
-            neueKontonummer = Math.abs(rand.nextLong()) % 10000000000L;
-
-            boolean kontonummerExistiertBereits = false;
-
-            //prüft ob Kontonummer bereits bei der Bank existiert
-            for (Konto k : konten) {
-                if (k.getKontonummer() == neueKontonummer) {
-                    kontonummerExistiertBereits = true;
-                    break; //falls die Kontonummer bereits verwendet wird
-                }
-            }
-
-            //wenn die Kontonummer noch nicht verwendet wird
-            if (!kontonummerExistiertBereits) {
-                try {
-
-                    //neues Sparbuch mit inhaber und der neuen Kontonummer erstellt
-                    Sparbuch neuesSparbuch = new Sparbuch(inhaber, neueKontonummer);
-
-                    //wird zur Liste der Konten bei dieser Bank hinzugefügt
-                    this.konten.add(neuesSparbuch);
-                    gespeichert = true;
-                } catch (UngueltigeKontonummerException e) {
-                    //Schleife läuft weiter und würfelt neue Nummer
-                }
-            }
-        } while (!gespeichert);
-
+    public long sparbuchErstellen(Kunde inhaber) throws UngueltigeKontonummerException {
+        long neueKontonummer = naechsteKontonummer++;
+        Sparbuch neuesSparbuch = new Sparbuch(inhaber, neueKontonummer);
+        konten.put(neueKontonummer, neuesSparbuch);
         return neueKontonummer;
     }
 
     /**
      * Liefert eine Auflistung von Kontonummern und Kontostand zu jedem
      * Konto in jeweils einer Zeile zurück.
-     *
      * @return Auflistung von Kontonummern mit jeweiligem Kontostand
      */
     public String getAlleKonten() {
         StringBuilder ausgabe = new StringBuilder();
 
-        for (Konto k : konten) {
+        for (Konto k : konten.values()) {
             //fügt den Text einfach hinten an, ohne neue Objekte zu erzeugen
             ausgabe.append("Kontonummer: ")
                     .append(k.getKontonummer())
                     .append(", aktueller Kontostand: ")
                     .append(k.getKontostand())
-                    .append("\n");
+                    .append(System.lineSeparator());
         }
 
         return ausgabe.toString();
@@ -151,24 +171,15 @@ public class Bank {
 
     /**
      * Liefert eine Menge aller gültigen Kontonummern in der Bank.
-     *
      * @return Menge aller gültigen Kontonummern in der Bank
      */
     public Set<Long> getAlleKontonummern() {
-        Set<Long> ausgabe = new HashSet<>();
-
-        for (Konto k : konten) {
-            long kontonummer = k.getKontonummer();
-            ausgabe.add(kontonummer);
-        }
-
-        return ausgabe;
+        return new HashSet<>(konten.keySet()); //Kopie, keySet direkt zurückgeben würde interne Map exponieren
     }
 
     /**
      * Liefert eine Menge aller Kunden, die bei dieser Bank mindestens ein Konto haben.
      * Kunden sind absteigend nach ihrem Geburtstag sortiert.
-     *
      * @return sortiertes Set von Kunden bei dieser Bank
      */
     public SortedSet<Kunde> getAlleKunden() {
@@ -180,15 +191,14 @@ public class Bank {
                 if (vergleich != 0) {
                     return vergleich;
                 }
-                //wenn sie gleich sind, vergleiche den Namen,
+                //wenn sie gleich sind, vergleiche den Namen (siehe 'compareTo()' in Klasse 'Kunde'),
                 //sonst würden Kunden mit dem gleichen Geburtstag einfach nicht eingefügt werden
-                return k1.getName().compareTo(k2.getName());
+                return k1.compareTo(k2);
             }
         });
 
-        for (Konto k : konten) {
-            Kunde kunde = k.getInhaber();
-            ausgabe.add(kunde);
+        for (Konto k : konten.values()) {
+            ausgabe.add(k.getInhaber());
         }
 
         return ausgabe;
@@ -196,97 +206,77 @@ public class Bank {
 
     /**
      * Löscht das Konto mit der angegebenen Nummer.
-     *
      * @param number Konto mit dieser Nummer, welches gelöscht werden soll
      * @return true, wenn das Konto gelöscht wurde, false, wenn die Kontonummer nicht existiert
      */
     public boolean kontoLoeschen(long number) {
-        //expliziter Iterator für die Liste konten
-        Iterator<Konto> it = konten.iterator();
-
-        while (it.hasNext()) { //solange noch ein nächstes Element existiert
-            Konto k = it.next();
-
-            //wenn Kontonummer mit der gesuchten Kontonummer übereinstimmt
-            if (k.getKontonummer() == number) {
-                it.remove(); //Konto wird gelöscht
-                return true;
-            }
-        }
-        //falls nicht existent, nichts gelöscht und false zurückgegeben
-        return false;
+        return konten.remove(number) != null; //null bedeutet Schlüssel war nicht vorhanden
     }
 
     /**
      * Liefert den Kontostand des Kontos mit der angegebenen Nummer zurück.
-     *
+     * Gesperrte konten dürfen auch abgefragt werden.
      * @param nummer Konto mit dieser Nummer, dessen Kontostand zurückgegeben werden soll
      * @return Kontostand des Kontos mit der angegebenen Nummer
-     * @throws IllegalArgumentException wenn kein Konto mit dieser Kontonummer existiert
+     * @throws UngueltigeKontonummerException wenn kein Konto mit dieser Kontonummer existiert oder die
+     * Kontonummer ungültig ist
      */
-    public Geldbetrag getKontostand(long nummer) {
-
-        for (Konto k : konten) {
-            if (k.getKontonummer() == nummer) {
-                return k.getKontostand();
-            }
-        }
-        throw new IllegalArgumentException("Konto mit der Kontonummer: " + nummer + " existiert nicht!");
+    public Geldbetrag getKontostand(long nummer) throws UngueltigeKontonummerException{
+        return kontoGefundenOderException(nummer, false).getKontostand();
     }
 
     /**
-     * Hebt den Betrag vom Konto mit der Nummer von ab und gibt zurück, ob
-     * die Abhebung funktioniert hat.
-     *
-     * @param von    Nummer vom Konto von dem die Abhebung stattfinden soll
-     * @param betrag Betrag der vom Konto mit der Nummer von abgehoben werden soll
-     * @return true, wenn das Abheben funktioniert hat, false, wenn das Abheben nicht funktioniert hat
+     * Hebt den angegebenen Betrag vom Konto mit der angegebenen Kontonummer von ab.
+     * Gibt false zurück, wenn die Abhebung erlaubt aber nicht durchführbar ist (bspw.
+     * Kontostand überzogen etc.)
+     * @param von Kontonummer des Kontos von dem abgehoben werden soll
+     * @param betrag Betrag der abgehoben werden soll
+     * @return true, wenn die Abhebung durchgeführt wurde, false, wenn sie nicht möglich war
+     * @throws UngueltigeKontonummerException wenn die Kontonummer ungültig oder nicht vorhanden ist
      * @throws GesperrtException wenn das Konto gesperrt ist
      */
-    public boolean geldAbheben(long von, Geldbetrag betrag) throws GesperrtException {
-        for (Konto k : konten) {
-            if (k.getKontonummer() == von) {
-                return k.abheben(betrag);
-            }
-        }
-        return false;
+    public boolean geldAbheben(long von, Geldbetrag betrag) throws UngueltigeKontonummerException, GesperrtException {
+        return kontoGefundenOderException(von, true, false).abheben(betrag);
     }
 
     /**
-     * Zahlt den Betrag auf das angegebene Konto mit der Kontonummer auf ein.
-     *
-     * @param auf    Konto mit dieser Kontonummer auf das eingezahlt werden soll
-     * @param betrag Betrag der auf Konto mit der Kontonummer auf eingezahlt werden soll
-     * @return true, wenn das Einzahlen erfolgreich war, false, wenn das Einzahlen nicht erfolgreich war
+     * Zahlt den angegebenen Betrag auf das Konto mit der angegebenen Kontonummer ein.
+     * Auf gesperrte Konten darf auch eingezahlt werden.
+     * @param auf Kontonummer des Kontos auf das eingezahlt werden soll
+     * @param betrag Betrag der eingezahlt werden soll
+     * @return true, wenn das Einzahlen erfolgreich war
+     * @throws UngueltigeKontonummerException wenn die Kontonummer ungültig oder nicht vorhanden ist
      */
-    public boolean geldEinzahlen(long auf, Geldbetrag betrag) {
-        for (Konto k : konten) {
-            if (k.getKontonummer() == auf) {
-                k.einzahlen(betrag);
-                return true;
-            }
-        }
-        return false;
+    public boolean geldEinzahlen(long auf, Geldbetrag betrag) throws UngueltigeKontonummerException {
+        kontoGefundenOderException(auf, false).einzahlen(betrag);
+        return true; //wenn bis hier keine Exception geworfen wird, hat Einzahlung geklappt
     }
 
     /**
-     * Überweist den genannten Betrag vom überweisungsfähigen Konto mit der Nummer vonKontonr
-     * zum überweisungsfähigen Konto mit der Nummer nachKontonr und gibt zurück, ob die
-     * Überweisung funktioniert hat. Es funktionieren nur bankinterne Überweisungen.
-     *
-     * @param vonKontonr       Nummer des Kontos von dem der Geldbetrag überwiesen werden soll
-     * @param nachKontonr      Nummer des Kontos das den überwiesenen Betrag erhalten soll
-     * @param betrag           Betrag der überwiesen soll
-     * @param verwendungszweck Zweck wozu das Geld überwiesen wird
-     * @return true, wenn die Überweisung funktioniert hat, false, wenn die Überweisung nicht funktioniert hat
+     * Überweist den angegebenen Betrag vom konto mit Nummer vonKontonr
+     * zum Konto mit Nummer nachKontonr. Es sind nur bankinterne Überweisungen
+     * möglich und beide Konten müssen überweisungsfähig sein.
+     * Gibt false zurück, wenn das Absenden des Betrags nicht möglich war (bspw.
+     * weil der Kontostand überzogen wurde).
+     * @param vonKontonr Kontonummer des sendenden Kontos
+     * @param nachKontonr Kontonummer des empfangenden Kontos
+     * @param betrag zu überweisender Betrag
+     * @param verwendungszweck Verwendungszweck der Überweisung
+     * @return true, wenn die Überweisung durchgeführt wurde, false wenn sie nicht möglich war
+     * @throws UngueltigeKontonummerException wenn eine der Kontonummern ungültig oder nicht vorhanden ist
+     * @throws GesperrtException wenn das sendende Konto gesperrt ist
+     * @throws IllegalArgumentException wenn eines der Konten nicht überweisungsfähig ist
      */
-    public boolean geldUeberweisen(long vonKontonr, long nachKontonr, Geldbetrag betrag, String verwendungszweck) {
+    public boolean geldUeberweisen(long vonKontonr, long nachKontonr, Geldbetrag betrag, String verwendungszweck)
+        throws UngueltigeKontonummerException, GesperrtException
+    {
+        /* ALTE VERSION
         UeberweisungsfaehigesKonto vonKonto = null;
         UeberweisungsfaehigesKonto nachKonto = null;
 
-        //nach den Konten suchen und gleichzeitig prüfen ib sie überweisungsfähig sind
+        //nach den Konten suchen und gleichzeitig prüfen, ob sie überweisungsfähig sind
         for (Konto k : konten) {
-            if (k.getKontonummer() == vonKontonr && k instanceof UeberweisungsfaehigesKonto) {
+            if (k.getKontonummer() == vonKontonr && k instanceof UeberweisungsfaehigesKonto) { //KLAUSURRELEVANT
                 vonKonto = (UeberweisungsfaehigesKonto) k;
             }
             if (k.getKontonummer() == nachKontonr && k instanceof UeberweisungsfaehigesKonto) {
@@ -325,40 +315,50 @@ public class Bank {
             return false;
         }
         return false;
+        */
+
+        Konto vonRoh = kontoGefundenOderException(vonKontonr, true, true);
+        Konto nachRoh = kontoGefundenOderException(nachKontonr, true);
+
+        if (vonRoh instanceof UeberweisungsfaehigesKonto vonKonto && nachRoh instanceof UeberweisungsfaehigesKonto nachKonto) {
+            boolean erfolgreich = vonKonto.ueberweisungAbsenden(
+                    betrag,
+                    nachKonto.getInhaber().getName(),
+                    nachKontonr,
+                    this.bankleitzahl,
+                    verwendungszweck
+            );
+
+            if (erfolgreich) {
+                nachKonto.ueberweisungEmpfangen(
+                        betrag,
+                        vonKonto.getInhaber().getName(),
+                        vonKontonr,
+                        this.bankleitzahl,
+                        verwendungszweck
+                );
+            }
+
+            return erfolgreich;
+        }
+
+        return false; //wird nei erreicht, weil Hilfsmethode schon auf überweisungsfähigkeit prüft
     }
 
     /**
      * Liefert eine Map zurück, in der für jeden Kunden der Bank die Summe der Kontostände
      * aller seiner Konten angegeben ist.
-     *
-     * @return Map mit Summe aller Kontostände des Kunden
+     * @return Map von kunde zu Gesamtkontostand über alle seine Konten bei dieser Bank
      */
     public Map<Kunde, Geldbetrag> getGesamtKontostaende() {
-        //man könnte hier alternativ auch einfach merge() nutzen, indem man die for-Schleife ersetzt:
-        //for (Konto k: konten){
-        //        ergebnis.merge(k.getInhaber(), k.getKontostand(), (alterStand, neuerStand) -> alterStand.plus(neuerStand));
-        //    }
-
         Map<Kunde, Geldbetrag> ergebnis = new HashMap<>();
 
-        //über alle Konten in der Bank iterieren
-        for (Konto k : konten) {
-            //für jedes Konto den Inhaber und den Kontostand holen
-            Kunde inhaber = k.getInhaber();
-            Geldbetrag kontostand = k.getKontostand();
-
-            //prüfen ob Kunde schon in der Map ist, weil er mehr als ein Konto hat
-            if (ergebnis.containsKey(inhaber)) {
-                //falls ja, Kontostand des neu gefundenen Kontos mit dem schon vorhandenen Gesamtkontostand addieren
-                Geldbetrag bisherigeSumme = ergebnis.get(inhaber);
-                //könnte man mit Map.compute ersetzen
-                ergebnis.put(inhaber, bisherigeSumme.plus(kontostand));
-            } else {
-                //wenn noch nicht in der Map vorhanden, einfach neu hinzufügen
-                ergebnis.put(inhaber, kontostand);
-            }
+        for (Konto k : konten.values()) {
+            ergebnis.merge(k.getInhaber(), k.getKontostand(), (alt, neu) -> alt.plus(neu));
         }
+
         return ergebnis;
+
     }
 
     /**
@@ -369,12 +369,10 @@ public class Bank {
      */
     public int kontenEinesKundenLoeschen(Kunde inhaber) {
         int anzahlGeloeschterKonten = 0;
-        Iterator<Konto> it = konten.iterator();
+        Iterator<Konto> it = konten.values().iterator();
 
         while (it.hasNext()) {
-            Konto konto = it.next();
-
-            if (konto.getInhaber().equals(inhaber)) {
+            if (it.next().getInhaber().equals(inhaber)) {
                 it.remove();
                 anzahlGeloeschterKonten++;
             }

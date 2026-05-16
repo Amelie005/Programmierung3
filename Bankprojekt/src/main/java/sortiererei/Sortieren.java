@@ -14,9 +14,9 @@ import bankprojekt.basisdaten.Sparbuch;
  * @author Doro
  * 
  */
-public class Sortieren {
+public class Sortieren<T> {
 
-	//bleibt unverändert
+	//bleibt unverändert (primitiver Datentyp → funktioniert nicht mit Generics)
 	/**
 	 * sortiert das Array x aufsteigend
 	 * @param x das zu sortierende Array
@@ -40,7 +40,9 @@ public class Sortieren {
 			}
 		}
 	}
-	
+
+	//T muss gleich Comparable oder Unterklasse von Comparable sein bzw. das Interface implementieren,
+	//und Comparable muss T oder Oberklasse von T sein
 	/**
 	 * sortiert das Array x aufsteigend
 	 * @param x das zu sortierende Array
