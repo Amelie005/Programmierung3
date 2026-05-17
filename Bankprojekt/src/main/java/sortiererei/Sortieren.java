@@ -1,4 +1,5 @@
 package sortiererei;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -14,7 +15,7 @@ import bankprojekt.basisdaten.Sparbuch;
  * @author Doro
  * 
  */
-public class Sortieren<T> {
+public class Sortieren { //<T> wäre hier überflüssig, da die Methoden static sind
 
 	//bleibt unverändert (primitiver Datentyp → funktioniert nicht mit Generics)
 	/**
@@ -41,8 +42,6 @@ public class Sortieren<T> {
 		}
 	}
 
-	//T muss gleich Comparable oder Unterklasse von Comparable sein bzw. das Interface implementieren,
-	//und Comparable muss T oder Oberklasse von T sein
 	/**
 	 * sortiert das Array x aufsteigend
 	 * @param x das zu sortierende Array
@@ -77,7 +76,8 @@ public class Sortieren<T> {
 	 *                                  vergleich vergleichbar sind oder vergleich
 	 *                                  null ist
 	 */
-	public static <T> void sortiere(T[] x, Vergleicher<T> vergleich) {
+	//Vergleicher für Oberklasse, darf auch ein Array einer Unterklasse sortieren
+	public static <T> void sortiere(T[] x, Vergleicher<? super T> vergleich) {
 		if(vergleich == null)
 			throw new IllegalArgumentException();
 		boolean unsortiert = true;
@@ -142,7 +142,7 @@ public class Sortieren<T> {
 		System.out.println();	
 		
 		System.out.println("----------------------");
-		Vergleicher x = new KontoVergleicher();
+		Vergleicher<Konto> x = new KontoVergleicher(); //vorher: nur Vergleicher x -> wäre Raw-Type
 		x.sortiere(liste4);
 		for (int i = 0; i < liste4.length; i++)
 			System.out.println(liste4[i] + " ");

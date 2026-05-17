@@ -122,35 +122,46 @@ public class SortierteListe<T extends Comparable<? super T>> {
 
 	/**
 	 * Fügt alle Elemente aus neueMitglieder zu this hinzu, sofern sie die
-	 * Probe von this erfüllen.
+	 * Probe von this erfüllen. Die Collection kann Elemente aus T oder
+	 * Untertypen von T enthalten ({@code Collection<? extends T>}).
 	 * @param neueMitglieder Collection mit Elementen vom Typ T oder dessen Untertypen
+	 * @throws IllegalArgumentException wenn ein Element der Collection nicht die Bedingung erfüllt
 	 */
 	public void addAll(Collection<? extends T> neueMitglieder) {
-		if (neueMitglieder == null) return;
+		if (neueMitglieder == null) return; //wenn Collection leer ist, gar nichts machen
+
+		//erst prüfen, ob alle Elemente die Bedingung erfüllen
+		for (T element :  neueMitglieder) {
+			if(!bedingung.isOk(element))
+				throw new IllegalArgumentException("Element " + element + " erfüllt die Bedingung nicht!");
+		}
+
+		//nur wenn alle Elemente die Bedingung erfüllen zur Liste zufügen
 		for (T element : neueMitglieder) {
 			this.add(element);
 		}
 	}
 
+
 	/**
 	 * Entfernt alle Elemente aus this, die die Bedingung erfüllen.
+	 * Die Probe ist gleich T oder ein Obertyp von T ({@code Probe<? super T>}).
 	 * @param bedingung die Probe, die entscheidet, welche Elemente gelöscht werden
 	 */
 	public void remove(Probe<? super T> bedingung) {
-		if (bedingung == null || anfang == null) return;
+		if (bedingung == null || anfang == null) return; //wenn bedingung oder Liste null ist, gar nichts machen
 
-		//Sonderfall: Anfangselemente entfernen
+		//Anfangselement entfernen, falls nötig
 		while (anfang != null && bedingung.isOk(anfang.wert)) {
 			anfang = anfang.naechster;
 		}
 
 		//restliche Liste durchlaufen
-		if (anfang == null) return;
+		if (anfang == null) return; //wenn Liste jetzt leer ist, nichts tun
 		Element zeiger = anfang;
-		while (zeiger.naechster != null) {
+		while (zeiger.naechster != null) { //solange nächstes Element nicht null ist
 			if (bedingung.isOk(zeiger.naechster.wert)) {
-				//Element wird gelöscht
-				zeiger.naechster = zeiger.naechster.naechster;
+				zeiger.naechster = zeiger.naechster.naechster; //Element wird gelöscht
 			} else {
 				zeiger = zeiger.naechster;
 			}
@@ -159,22 +170,23 @@ public class SortierteListe<T extends Comparable<? super T>> {
 
 	/**
 	 * Entfernt alle Elemente aus this, die größer sind als element.
+	 * E muss mit T oder einem Obertyp von T vergleichbar sein ({@code <E extends Comparable<? super T>>}).
 	 * @param element Vergleichselement
 	 * @param <E> Typ des Vergleichselements
 	 */
-	public <E> void removeAllBigger(E element) {
-		if (element == null || anfang == null) return;
+	public <E extends Comparable<? super T>> void removeAllBigger(E element) {
+		if (element == null || anfang == null) return; //wenn Element null oder Liste leer, nichts tun
 
-		//auf Comparable casten, damit man Typen die vom gleichen Obertyp erben vergleichen kann
-		if (((Comparable)anfang.wert).compareTo(element) > 0) {
-			anfang = null;
+
+		if (element.compareTo(anfang.wert) > 0) {
+			anfang = null; //wenn erstes Element schon größer als Element, Liste leeren, da sie sortiert ist (laut add() Logik aufsteigend)
 			return;
 		}
 
 		Element zeiger = anfang;
-		while (zeiger.naechster != null) {
-			if (((Comparable)zeiger.naechster.wert).compareTo(element) > 0) {
-				zeiger.naechster = null;
+		while (zeiger.naechster != null) { //solange nächstest Element nicht null
+			if (element.compareTo(zeiger.naechster.wert) > 0) {
+				zeiger.naechster = null; //wenn Element größer, Element und alles nachfolgende löschen
 				return;
 			}
 			zeiger = zeiger.naechster;
@@ -183,14 +195,12 @@ public class SortierteListe<T extends Comparable<? super T>> {
 
 	
 	/**
-	 * EigeneListe ausprobieren
+	 * Eigene Liste ausprobieren
 	 * @param args wird nicht verwendet
 	 */
 	public static void main(String args[])
 	{
-		SortierteListe<Integer> l = 
-				new SortierteListe<Integer>(new LaesstAllesZu());
-				//EigeneListe(Probe<Integer> bedingung)
+		SortierteListe<Integer> l = new SortierteListe<Integer>(new LaesstAllesZu()); //EigeneListe(Probe<Integer> bedingung)
 		l.add(1);
 		l.add(2);
 		System.out.println(l);
@@ -199,8 +209,7 @@ public class SortierteListe<T extends Comparable<? super T>> {
 
 
 
-		SortierteListe<String> woerter = 
-				new SortierteListe<>(new FaengtAnMitAProbe());
+		SortierteListe<String> woerter = new SortierteListe<>(new FaengtAnMitAProbe());
 		woerter.add("Adalbert");
 		woerter.add("Bertha");
 		woerter.add("Anna");
@@ -222,8 +231,7 @@ public class SortierteListe<T extends Comparable<? super T>> {
 		Girokonto g2 = new Girokonto(ich, 999, new Geldbetrag(1000));
 		Girokonto g3 = new Girokonto(ich, 34567, new Geldbetrag(70));
 		
-		SortierteListe<Girokonto> kontoliste = 
-				new SortierteListe<>(new LaesstAllesZu());
+		SortierteListe<Girokonto> kontoliste = new SortierteListe<>(new LaesstAllesZu());
 		kontoliste.add(g1);
 		kontoliste.add(g2);
 		kontoliste.add(g3);
@@ -256,9 +264,6 @@ public class SortierteListe<T extends Comparable<? super T>> {
 		JapaneseDate japDate = JapaneseDate.now();
 		localDates.removeAllBigger(japDate);
 		System.out.println("LocalDates nach filtern mit JapaneseDate: "  + localDates);
-
-
-
 
 	}
 
