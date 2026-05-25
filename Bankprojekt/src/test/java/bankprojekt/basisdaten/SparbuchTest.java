@@ -4,110 +4,113 @@ import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.nuetzliches.Kalender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 class SparbuchTest {
 
     private Sparbuch sparbuch;
     private Kunde testInhaber;
 
+    @Mock
+    private Kalender kalender;
+
     @BeforeEach
     void setUp() {
+
+        MockitoAnnotations.openMocks(this); //Mocks zuerst, sonst ist Kalender noch null, wenn Konstruktor ihn braucht
+
         testInhaber = new Kunde("Max", "Mustermann", "Musterstr. 1", LocalDate.of(2000, 1, 1));
-        sparbuch = new Sparbuch(testInhaber, 12345678L);
+
+        //Kalender gibt standardmäßig festes Datum zurück
+        when(kalender.getHeutigesDatum()).thenReturn(LocalDate.of(2024, 1, 1));
+
+        //Sparbuch mit gemocktem Kalender erstellen
+        sparbuch = new Sparbuch(testInhaber, 12345678L, kalender);
         sparbuch.einzahlen(new Geldbetrag(5000)); //Startguthaben für Tests
+
     }
 
-    //Test 1: erfolgreiches abheben ohne Grenzfall
     @Test
-    void testAbhebenErfolgreich() throws GesperrtException {
+    void abhebenErfolgreich() throws GesperrtException {
         boolean result = sparbuch.abheben(new Geldbetrag(100));
         assertTrue(result, "Abheben erfolgreich.");
         assertEquals(new Geldbetrag(4900), sparbuch.getKontostand());
     }
 
-    //Test 2: erfolgreiches abheben, aber mit Grenzfall (genau 2000€ abgehoben)
     @Test
-    void testAbhebenUntereGrenze() throws GesperrtException {
+    void abhebenUntereGrenzeErreicht() throws GesperrtException {
         boolean result = sparbuch.abheben(new Geldbetrag(2000));
         assertTrue(result);
         assertEquals(new Geldbetrag(3000), sparbuch.getKontostand());
     }
 
-    //Test 3: Monatslimit von 2000€ überschritten -> muss false liefern
     @Test
-    void testAbhebenMonatslimitUeberschritten() throws GesperrtException {
+    void abhebenMonatslimitWurdeUeberschrittenFalseZurueckliefern() throws GesperrtException {
         sparbuch.abheben(new Geldbetrag(2000));
         boolean result = sparbuch.abheben(new Geldbetrag(1));
         assertFalse(result);
     }
 
-    //Test 4: Grenzfall, denn Kontostand würde unter 0.50€ fallen -> muss false liefern
     @Test
-    void testAbhebenUnterMinimum() throws GesperrtException {
+    void abhebenUnterMinimumGefallenFalseZurueckliefern() throws GesperrtException {
         boolean result = sparbuch.abheben(new Geldbetrag(4999.51));
         assertFalse(result);
     }
 
-    //Test 5: Fehlerfall; ein gesperrtes Konto muss eine GesperrtException werfen
     @Test
-    void testAbhebenGesperrt() {
+    void abhebenKontoGesperrtWirftGesperrtException() {
         sparbuch.sperren();
         assertThrows(GesperrtException.class, () -> sparbuch.abheben(new Geldbetrag(100)));
     }
 
-    //Test 6: Fehlerfall; null-Betrag muss IllegalArgumentException werfen
     @Test
-    void testAbhebenNull() {
+    void abhebenVonNullBetragWirftIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> sparbuch.abheben(null));
     }
 
-    //Test 7: Fehlerfall; negativer Betrag muss IllegalArgumentException werfen
     @Test
-    void testAbhebenNegativ() {
+    void abhebenBetragIstNegativWirftIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> sparbuch.abheben(new Geldbetrag(-50)));
     }
 
     //Dieser Test schlägt mit dem Original-Code fehl!!!
-    //Test 8: Abhebung in einem neuen Monat muss korrekt gezählt werden
     @Test
-    void testAbhebenNeuerMonatWirdGezaehlt() throws GesperrtException {
+    void abhebenNeuerMonatWirdGezaehlt() throws GesperrtException {
+        //Abhebung damit Monat auf Januar gesetzt wird
+        sparbuch.abheben(new Geldbetrag(100));
 
-        //erstellen eines veränderbaren Kalenders
-        class VerstellbarerKalender extends Kalender {
-            LocalDate datum = LocalDate.of(2099, 5, 1); // Wir starten im Mai
-            @Override
-            public LocalDate getHeutigesDatum() {
-                return datum;
-            }
-        }
-        VerstellbarerKalender meinKalender = new VerstellbarerKalender();
+        //Kalender auf Februar umstellen
+        when(kalender.getHeutigesDatum()).thenReturn(LocalDate.of(2024, 2, 1));
 
-        //Sparbuch erstellen und füllen
-        Sparbuch neuesSparbuch = new Sparbuch(testInhaber, 87654321L, meinKalender);
-        neuesSparbuch.einzahlen(new Geldbetrag(5000));
+        //Erste Abhebung im Februar sollte funktionieren
+        boolean februarErste = sparbuch.abheben(new Geldbetrag(2000));
+        assertTrue(februarErste, "Erste Abhebung im Februar sollte funktionieren.");
 
-        // Initialisierung: Einmal im Mai abheben, damit "zeitpunkt" im Objekt auf Mai steht
-        neuesSparbuch.abheben(new Geldbetrag(10));
+        //Zweite Abhebung im Februar darf nicht mehr funktionieren, da
+        //Monatslimit bereits erreicht wurde
+        boolean februarZweite = sparbuch.abheben(new Geldbetrag(1));
+        assertFalse(februarZweite, "Monatslimit im Februar wurde bereits erreicht!");
+    }
 
-        //Jetzt stellen wir den Kalender auf Juni um
-        meinKalender.datum = LocalDate.of(2099, 6, 1);
+    @Test
+    void abhebenJahresWechselSetztLimitZurueck() throws GesperrtException {
+        when(kalender.getHeutigesDatum()).thenReturn(LocalDate.of(2024, 12, 1));
 
-        //Erstes Abheben im JUNI (Maximum ausschöpfen)
-        //ALTER CODE: Prüft Limit -> OK -> Setzt bereitsAbgehoben auf 2000 -> Reset auf 0 (weil neuer Monat)!
-        //NEUER CODE: Reset auf 0 (wegen neuem Monat) -> Prüft Limit -> OK -> Setzt bereitsAbgehoben auf 2000.
-        neuesSparbuch.abheben(new Geldbetrag(2000));
+        //Limit im Dezember ausnutzen
+        sparbuch.abheben(new Geldbetrag(2000));
 
-        //zweites Abheben im JUNI (darf nicht funktionieren!)
-        boolean result = neuesSparbuch.abheben(new Geldbetrag(1));
+        //auf Januar umstellen
+        when(kalender.getHeutigesDatum()).thenReturn(LocalDate.of(2025, 1, 1));
 
-        //Auswertung:
-        // Der alte Code liefert hier TRUE (Fehler!), weil der Zähler oben resettet wurde
-        // Der neue Code liefert hier FALSE (Korrekt!), weil der Zähler bei 2000 steht
-        assertFalse(result, "Nachdem im neuen Monat bereits 2000€ abgehoben wurden, darf kein weiterer Euro abgehoben werden.");
+        //Ersze Abhebung im neuen Jahr sollte funktionieren
+        boolean result = sparbuch.abheben(new Geldbetrag(2000));
+        assertTrue(result, "Nach Jahreswechsel muss Monatslimit zurückgesetzt sein!");
     }
 }
 

@@ -60,7 +60,7 @@ public class Bank {
     private Konto kontoGefundenOderException(long nummer, boolean ueberweisungPruefen)
             throws UngueltigeKontonummerException
     {
-        if (nummer >= 0) {
+        if (nummer <= 0) {
             throw new UngueltigeKontonummerException(); //Kontonummer hat ungültiges Format, sollte aber
             //eigentlich nie passieren
         }
@@ -95,7 +95,7 @@ public class Bank {
     private Konto kontoGefundenOderException(long nummer, boolean gesperrtPruefen, boolean ueberweisungPruefen)
         throws UngueltigeKontonummerException, GesperrtException
         {
-        if (nummer >= 0) {
+        if (nummer <= 0) {
             throw new UngueltigeKontonummerException(); //Kontonummer hat ungültiges Format, sollte aber
             //eigentlich nie passieren
         }
@@ -378,5 +378,21 @@ public class Bank {
             }
         }
         return anzahlGeloeschterKonten;
+    }
+
+    /**
+     * Fügt das gegebene Konto k, bei dem es sich um ein Mock-Objekt
+     * handeln sollte, in die Kontenliste der Bank ein und liefert die dabei von der Bank vergebene
+     * Kontonummer zurück.
+     * @param k Konto das in die Kontoliste der Bank eingefügt werden soll
+     * @return für das Konto k vergebene Kontonummer
+     */
+    public long mockEinfuegen(Konto k) {
+        long neueNummer = this.naechsteKontonummer; //neue Kontonummer bestimmen und hochzählen
+        this.naechsteKontonummer++;
+
+        this.konten.put(neueNummer, k);
+
+        return neueNummer;
     }
 }
