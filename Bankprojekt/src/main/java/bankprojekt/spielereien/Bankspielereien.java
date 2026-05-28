@@ -103,17 +103,19 @@ public class Bankspielereien {
 		System.out.println("Anzahl gelöschter Konten von Mama (erwartet 4): " + anzahlMama);
 
 		//Dispo Limit überschritten
-		System.out.println("\nTest Überziehung des Dispo:");
+		System.out.println(System.lineSeparator() + "Test Dispo Limit:");
 		boolean zuViel = bank.geldAbheben(nrPapa, new Geldbetrag(10000.0));
 		System.out.println("Abheben von 10.000€ (erwartet false): " + zuViel);
 
 		//Sortierung der Kunden überprüfen
-		System.out.println("\nTest Kundensortierung:");
+		System.out.println( System.lineSeparator() + "Test Kundensortierung:");
 		SortedSet<Kunde> kunden = bank.getAlleKunden();
 		System.out.println("Kunden absteigend nach Geburtstag:");
 		for(Kunde k : kunden) {
 			System.out.println(k.getGeburtstag() + " : " + k.getName());
 		}
+
+
 
 	}
 }

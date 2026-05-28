@@ -8,6 +8,7 @@ import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -31,7 +32,6 @@ class BankTest {
     @Mock
     private Sparbuch mockSparbuch;
 
-
     //Kontonummern die an die Mocks vergeben werden
     private long nrVon;
     private long nrNach;
@@ -43,7 +43,7 @@ class BankTest {
 
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
 
         bank = new Bank(12345L);
 
@@ -64,16 +64,25 @@ class BankTest {
         nrVon = bank.mockEinfuegen(mockGiroVon);
         nrNach = bank.mockEinfuegen(mockGiroNach);
         nrSparbuch = bank.mockEinfuegen(mockSparbuch);
+
+//        when(mockGiroNach.ueberweisungAbsenden(
+//                ArgumentMatchers.any(Geldbetrag.class),
+//                ArgumentMatchers.anyString(),
+//                ArgumentMatchers.anyLong(),
+//                ArgumentMatchers.anyLong(),
+//                ArgumentMatchers.anyString())).thenReturn(true);
+
     }
 
 
     @Test
-    void getKontostandKontonummerVorhandenLiefertKontostand() throws UngueltigeKontonummerException {
+    void getKontostandKontonummerVorhandenLiefertKontostand() throws UngueltigeKontonummerException, GesperrtException {
         Geldbetrag erwartet = new Geldbetrag(250.0);
         when(mockGiroVon.getKontostand()).thenReturn(erwartet);
         Geldbetrag ergebnis = bank.getKontostand(nrVon);
 
         assertEquals(erwartet, ergebnis);
+        verify(mockGiroVon,times(0)).abheben(ArgumentMatchers.any(Geldbetrag.class));
     }
 
 
@@ -90,41 +99,46 @@ class BankTest {
 
     @Test
     void getKontostandKontonummerNichtVorhandenWirftException() throws UngueltigeKontonummerException {
-        try {
-            bank.getKontostand(9999L);
-            fail("Es müsste eine UngültigeKontonummerException geworfen werden!");
-        } catch (UngueltigeKontonummerException e) {
-            //Test bestanden
-        }
+        assertThrows(UngueltigeKontonummerException.class, () -> bank.getKontostand(9999L));
     }
 
     @Test
     void getKontostandUngueltigeKontonummerWirftException() {
-        try {
-            bank.getKontostand(-1L);
-            fail("Es müsste eine UngueltigeKontonummerException geworfen werden!");
-        } catch (UngueltigeKontonummerException e) {
-            //Test bestanden
-        }
+        assertThrows(UngueltigeKontonummerException.class, () -> bank.getKontostand(-1L));
     }
 
     @Test
     void geldUeberweisenErfolgreichGibtTrueUndRuftEmpfangenAuf() throws UngueltigeKontonummerException, GesperrtException {
         Geldbetrag betrag = new Geldbetrag(100.0);
         when(mockGiroVon.ueberweisungAbsenden(
-                eq(betrag), anyString(), eq(nrNach), eq(bank.getBankleitzahl()), anyString())
+                eq(betrag),
+                eq(kundeNach.getName()),
+                eq(nrNach),
+                eq(bank.getBankleitzahl()),
+                eq("Miete"))
         ).thenReturn(true);
 
         boolean ergebnis = bank.geldUeberweisen(nrVon, nrNach, betrag, "Miete");
 
         assertTrue(ergebnis);
 
+        //prüfen, das ueberweisungAbsenden mit korrekten Parametern aufgerufen wurde
+        verify(mockGiroVon).ueberweisungAbsenden(
+                eq(betrag),
+                eq(kundeNach.getName()),
+                eq(nrNach),
+                eq(bank.getBankleitzahl()),
+                eq("Miete"));
+
         //nach erfolgreicher Absendung muss der Empfänger die Überweisung empfangen haben
         verify(mockGiroNach).ueberweisungEmpfangen(
-                eq(betrag), anyString(), eq(nrVon), eq(bank.getBankleitzahl()), anyString());
+                eq(betrag),
+                eq(kundeVon.getName()),
+                eq(nrVon),
+                eq(bank.getBankleitzahl()),
+                eq("Miete"));
 
     }
-
 
     @Test
     void geldUeberweisenAbsendenSchlaegtFehlGibtFalseUndWirdNichtEmpfangen() throws UngueltigeKontonummerException, GesperrtException {
@@ -141,18 +155,18 @@ class BankTest {
 
 
     @Test
-    void geldUeberweisenVonKontoGesperrtWirftGesperrtException() {
+    void geldUeberweisenVonKontoGesperrtWirftGesperrtException() throws GesperrtException {
         when(mockGiroVon.isGesperrt()).thenReturn(true);
+        when(mockGiroVon.ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString()))
+                .thenThrow(new GesperrtException(nrVon));
 
-        try {
-            bank.geldUeberweisen(nrVon, nrNach, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste eine GesperrtException geworfen werden!");
-        } catch (UngueltigeKontonummerException e) {
-            fail("UngueltigeKontonummerExcpetion statt GesperrtException wurde geworfen!");
-        } catch (GesperrtException e) {
-            //Test bestanden
-        }
+        assertThrows(GesperrtException.class,
+                () -> bank.geldUeberweisen(nrVon, nrNach, new Geldbetrag(100.0), "Miete" ));
+
+        //Geld darf nie empfangen werden
+        verify(mockGiroNach, never()).ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString());
     }
+
 
     @Test
     void geldUeberweisenNachKontoGesperrtWirftKeineException() throws UngueltigeKontonummerException, GesperrtException {
@@ -165,56 +179,40 @@ class BankTest {
 
     @Test
     void geldUeberweisenVonKontoNichtVorhandenWirftUngueltigeKontonummerException() {
-        try {
-            bank.geldUeberweisen(9999L, nrNach, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste eine UngueltigeKontonummerException geworfen werden!");
-        } catch (UngueltigeKontonummerException e) {
-            //Test bestanden
-        } catch (GesperrtException e) {
-            fail("GesperrtException statt UngueltigeKontonummerException geworfen!");
-        }
+        assertThrows(UngueltigeKontonummerException.class,
+                () -> bank.geldUeberweisen(999L, nrNach, new Geldbetrag(100.0), "Miete"));
+
+        //Überweisung soll nicht empfangen werden können
+        verify(mockGiroNach, never()).ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
     }
 
     @Test
     void geldUeberweisenNachKontoNichtVorhandenWirftUngueltigeKontonummerException() {
-        try {
-            bank.geldUeberweisen(nrVon, 9999L, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste eine UngueltigeKontonummerException geworfen werden!");
-        } catch (UngueltigeKontonummerException e) {
-            //Test bestanden
-        } catch (GesperrtException e) {
-            fail("GesperrtException statt UngueltigeKontonummerException geworfen!");
-        }
+        assertThrows(UngueltigeKontonummerException.class,
+                () -> bank.geldUeberweisen(nrVon, 999L, new Geldbetrag(100.0), "Miete"));
+
+        //Überweisung soll nicht empfangen werden können
+        verify(mockGiroNach, never()).ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
     }
 
     @Test
     void geldUeberweisenVonKontoNichtUeberweisungsfaehigWirftIllegalArgumentException() {
         when(mockSparbuch.isGesperrt()).thenReturn(false);
 
-        try {
-            bank.geldUeberweisen(nrSparbuch, nrNach, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste eine IllegalArgumentException geworfen werden!");
-        } catch (IllegalArgumentException e) {
-            //Test bestanden
-        } catch (UngueltigeKontonummerException | GesperrtException e) {
-            fail(e.getClass().getSimpleName() + " statt IllegalArgumentException geworfen!");
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> bank.geldUeberweisen(nrSparbuch, nrNach, new Geldbetrag(100.0), "Miete"));
+
+        verify(mockGiroNach, never()).ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
     }
 
     @Test
-    void geldUeberweisenNachKontoNichtUeberweisungsfaehigWirftIllegalArgumentException() {
-        try {
-            bank.geldUeberweisen(nrVon, nrSparbuch, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste IllegalArgumentException geworfen werden!");
-        } catch (IllegalArgumentException e) {
-            //Test bestanden
-        } catch (UngueltigeKontonummerException | GesperrtException e) {
-            fail(e.getClass().getSimpleName() + " statt IllegalArgumentException geworfen!");
-        }
+    void geldUeberweisenNachKontoNichtUeberweisungsfaehigWirftIllegalArgumentException() throws GesperrtException {
+        assertThrows(IllegalArgumentException.class,
+                () -> bank.geldUeberweisen(nrVon, nrSparbuch, new Geldbetrag(100.0), "Miete"));
     }
 
     @Test
-    void geldUeberweisenAnSichSelbstWirdDruchgefuehrt() throws UngueltigeKontonummerException, GesperrtException {
+    void geldUeberweisenAnSichSelbstWirdDurchgefuehrt() throws UngueltigeKontonummerException, GesperrtException {
         when(mockGiroVon.ueberweisungAbsenden(
                 any(), anyString(), eq(nrVon), anyLong(), anyString())
         ).thenReturn(true);
@@ -225,26 +223,18 @@ class BankTest {
 
     @Test
     void geldUeberweisenUngueltigeVonKontonummerWirftUngueltigeKontonummerException() {
-        try {
-            bank.geldUeberweisen(-1L, nrNach, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste eine UngueltigeKontonummerException geworfen!");
-        } catch (UngueltigeKontonummerException e) {
-            //Test bestanden
-        } catch (GesperrtException e) {
-            fail("GesperrtException statt UngueltigeKontonummerException!");
-        }
+        assertThrows(UngueltigeKontonummerException.class,
+                () -> bank.geldUeberweisen(-1L, nrNach, new Geldbetrag(100.0), "Miete"));
+
+        verify(mockGiroNach, never()).ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
     }
 
     @Test
     void geldUeberweisenUngueltigeNachKontonummerWirftUngueltigeKontonummerException() {
-        try {
-            bank.geldUeberweisen(nrVon, -1L, new Geldbetrag(100.0), "Miete");
-            fail("Es müsste eine UngueltigeKontonummerException geworfen!");
-        } catch (UngueltigeKontonummerException e) {
-            //Test bestanden
-        } catch (GesperrtException e) {
-            fail("GesperrtException statt UngueltigeKontonummerException!");
-        }
+        assertThrows(UngueltigeKontonummerException.class,
+                () -> bank.geldUeberweisen(nrVon, -1L, new Geldbetrag(100.0), "Miete"));
+
+        verify(mockGiroNach, never()).ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
     }
 
 }
