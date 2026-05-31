@@ -5,6 +5,7 @@ import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -131,7 +132,7 @@ public class Bank {
      */
     public long girokontoErstellen(Kunde inhaber) throws UngueltigeKontonummerException {
         long neueKontonummer = naechsteKontonummer++;
-        Girokonto neuesGirokonto = new Girokonto(inhaber, neueKontonummer, new Geldbetrag(0.0));
+        Girokonto neuesGirokonto = new Girokonto(inhaber, neueKontonummer, new Geldbetrag(500.00));
         konten.put(neueKontonummer, neuesGirokonto);
         return neueKontonummer;
     }
@@ -403,35 +404,35 @@ public class Bank {
      * Wer mehrere überzogene Konten hat, kommt nicht doppelt vor.
      * @return Liste mit allen Kunden die ein Konto mit negativem Kontostand haben
      */
-    public List<Kunde> kundenMitLeeremKonto () {
-        Stream<Kunde> kundenMitLeeremKonto = konten.values().stream()
+    public List<Kunde> getKundenMitLeeremKonto () {
+        return konten.values().stream()
                 .filter(k -> k.getKontostand().isNegativ())
                 .map(Konto::getInhaber)
-                .distinct(); //stellt sicher, dass Kunden mit mehreren überzogenen Konten nicht doppelt vorkommen
-
-        return kundenMitLeeremKonto.toList();
+                .distinct()
+                .toList();
     }
 
     /**
      * Liefert die Namen und Geburtstage aller Kunden der Bank in einer sortierten Liste,
      * jeweils in einer Zeile.
      * Kunden kommen nicht doppelt vor.
-     * @return Liste mit Namen und Gebrustagen aller Kunden der Bank
+     * @return Liste mit Namen und Geburtstagen aller Kunden der Bank
      */
     public String getKundengeburtstage() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder string = new StringBuilder();
 
-        Stream<Kunde> kundenGeburtstage = konten.values().stream()
+        konten.values().stream()
                 .map(Konto::getInhaber)
                 .distinct()
-                .sorted(Comparator.comparing(Kunde::getGeburtstag).thenComparing(Kunde::getName)); //sortieren nach Geburtstag, bei Gleichheit nach Name
+                .sorted(Comparator.comparingInt((Kunde k) -> k.getGeburtstag().getMonthValue())
+                        .thenComparingInt(k -> k.getGeburtstag().getDayOfMonth())
+                        .thenComparing(Kunde::getName)) //bei Gleichheit nach Name sortiert
+                .forEach(k -> string.append(k.getName())
+                        .append(", Geburtstag: ")
+                        .append(k.getGeburtstag())
+                        .append(System.lineSeparator()));
 
-        kundenGeburtstage.forEach(k -> sb.append(k.getName())
-                .append(", Geburtstag: ")
-                .append(k.getGeburtstag())
-                .append(System.lineSeparator()));
-
-        return sb.toString();
+        return string.toString();
     }
 
     /**
@@ -440,14 +441,11 @@ public class Bank {
      */
     public long getAnzahlSenioren() {
 
-        //Kunden, die vor mehr als 67 Jahren geboren wurden, also mindestens 67 Jahre alt sind
         return konten.values().stream()
                 .map(Konto::getInhaber)
-                .map(Kunde::getGeburtstag)
                 .distinct()
-                .filter(g -> LocalDate.now().minusYears(67).isAfter(g)) //Period Klasse: minusYears
+                .filter(k -> Period.between(k.getGeburtstag(), LocalDate.now()).getYears() >= 67)
                 .count();
-
     }
 
     /**
@@ -456,23 +454,19 @@ public class Bank {
      * @param betrag einzuzahlender Betrag
      */
     public void schenkungAnNeueErwachsene (Geldbetrag betrag) {
-        //Kunden, die dieses Jahr 18 werden herausfiltern
-        Stream<Kunde> kundenDie18Werden = konten.values().stream()
+
+        konten.values().stream()
                 .map(Konto::getInhaber)
                 .distinct()
-                .sorted(Comparator.comparing(Kunde::getGeburtstag))
-                .filter(g -> LocalDate.now().minusYears(18).isAfter(g.getGeburtstag()));
-
-        //für jeden dieser Kunden ein Konto auswählen und den Betrag einzahlen
-        kundenDie18Werden.forEach(k -> {
-            //Konto eines Kunden auswählen, hier einfach das erste Konto, das gefunden wird
-            Optional<Konto> kontoOptional = konten.values().stream()
-                    .filter(konto -> konto.getInhaber().equals(k))
-                    .findFirst();
-            kontoOptional.ifPresent(konto -> geldEinzahlen(konto.getKontonummer(), betrag));
-        });
-
+                .filter(k -> k.getGeburtstag().getYear() == LocalDate.now().getYear() - 18)
+                .forEach(k -> konten.values().stream()
+                        .filter(konto -> konto.getInhaber().equals(k))
+                        .findFirst()
+                        .ifPresent(konto -> geldEinzahlen(konto.getKontonummer(), betrag)));
     }
 
 
 }
+
+
+

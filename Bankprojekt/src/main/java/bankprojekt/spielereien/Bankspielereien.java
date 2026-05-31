@@ -1,12 +1,15 @@
 package bankprojekt.spielereien;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.List;
 
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.exceptions.UngueltigeKontonummerException;
 import bankprojekt.verwaltung.Bank;
 
 /**
@@ -43,7 +46,8 @@ public class Bankspielereien {
 		long nrMama2 = bank.girokontoErstellen(mama);
 		long nrMama3 = bank.girokontoErstellen(mama);
 		long nrMama4 = bank.girokontoErstellen(mama);
-		long nrPapa = bank.girokontoErstellen(papa);
+		long nrPapa1 = bank.girokontoErstellen(papa);
+		long nrPapa2 = bank.girokontoErstellen(papa);
 		long nrSenior = bank.girokontoErstellen(senior);
 
 		//getBankleitzahl()
@@ -60,19 +64,23 @@ public class Bankspielereien {
 		System.out.println("Kontostand Opa1 (erwartet 1300): " + bank.getKontostand(nrOpa1));
 
         //Fehlerfall: Abheben von nicht existierendem Konto
-		boolean abhebenFehler = bank.geldAbheben(999999L, new Geldbetrag(10.0));
-		System.out.println("Abheben von nicht existierendem Konto (erwartet false): " + abhebenFehler);
+		try {
+			bank.geldAbheben(999999L, new Geldbetrag(10.0));
+			System.out.println("Abheben von nicht existierendem Konto (erwartet Exception): keine Exception geworfen!");
+		} catch (UngueltigeKontonummerException e) {
+			System.out.println("Abheben von nicht existierendem Konto wirft erwartungsgemäß UngueltigeKontonummerException ✓");
+		}
 
 		//Überweisungen
 		System.out.println("\nTests Überweisung:");
 		bank.geldEinzahlen(nrMama1, new Geldbetrag(100.0));
 
 		//Mama überweist an Papa
-		boolean ueberweisung = bank.geldUeberweisen(nrMama1, nrPapa, new Geldbetrag(50.0), "Essen");
+		boolean ueberweisung = bank.geldUeberweisen(nrMama1, nrPapa1, new Geldbetrag(50.0), "Essen");
 
 		System.out.println("Überweisung erfolgreich: " + ueberweisung);
 		System.out.println("Mamas Kontostand (erwartet 50): " + bank.getKontostand(nrMama1));
-		System.out.println("Papas Kontostand (erwartet 50): " + bank.getKontostand(nrPapa));
+		System.out.println("Papas Kontostand (erwartet 50): " + bank.getKontostand(nrPapa1));
 
 		//Map
 		System.out.println("\nTests Gesamt-Kontostände Map:");
@@ -94,8 +102,8 @@ public class Bankspielereien {
 		System.out.println("Existiert es noch?(sollte Exception werfen):");
 		try {
 			bank.getKontostand(nrSenior);
-		} catch (IllegalArgumentException e) {
-			System.out.println(e.getMessage());
+		} catch (UngueltigeKontonummerException e) {
+			System.out.println("Konto existiert nicht mehr.");
 		}
 
 		//alle Konten von Mama löschen
@@ -104,7 +112,7 @@ public class Bankspielereien {
 
 		//Dispo Limit überschritten
 		System.out.println(System.lineSeparator() + "Test Dispo Limit:");
-		boolean zuViel = bank.geldAbheben(nrPapa, new Geldbetrag(10000.0));
+		boolean zuViel = bank.geldAbheben(nrPapa1, new Geldbetrag(10000.0));
 		System.out.println("Abheben von 10.000€ (erwartet false): " + zuViel);
 
 		//Sortierung der Kunden überprüfen
@@ -115,6 +123,49 @@ public class Bankspielereien {
 			System.out.println(k.getGeburtstag() + " : " + k.getName());
 		}
 
+		//getKundenMitLeeremKonto
+		System.out.println(System.lineSeparator() + "Test getKundenMitLeeremKonto:");
+
+		bank.geldAbheben(nrKind1, new Geldbetrag(50.0));
+		bank.geldAbheben(nrKind1, new Geldbetrag(50.0));
+		bank.geldAbheben(nrPapa1, new Geldbetrag(150.0));
+		bank.geldAbheben(nrPapa2, new Geldbetrag(200.0));
+
+		List<Kunde> kundenMitLeeremKonto = bank.getKundenMitLeeremKonto();
+		System.out.println("Kunden mit leerem Konto (erwartet: 2): " + kundenMitLeeremKonto.size());
+		if(!kundenMitLeeremKonto.isEmpty()) {
+			for (Kunde k : kundenMitLeeremKonto) {
+				System.out.println(k.getName());
+			}
+		}
+
+		//getKundenGeburtstage
+		System.out.println(System.lineSeparator() + "Test getKundengeburtstage:");
+		String geburtstageAusgabe = bank.getKundengeburtstage();
+		System.out.println("Sortiert nach Monat + Tag und dann Name:");
+		System.out.print(geburtstageAusgabe);
+
+		//getAnzahlSenioren
+		System.out.println(System.lineSeparator() + "Test getAnzahlSenioren:");
+		//nrSenior wurde weiter oben schon gelöscht
+		long anzahlSenioren = bank.getAnzahlSenioren();
+		System.out.println("Anzahl Senioren (erwartet: 1): " + anzahlSenioren);
+
+		//schenkungAnNeueErwachsene
+		System.out.println(System.lineSeparator() + "Test schenkungAnNeueErwachsene:");
+		System.out.println("Vor der Schenkung:");
+		System.out.println("GeradeErwachsen1: " + bank.getKontostand(nrGeradeErwachsen1));
+		System.out.println("NochNichtGanzErwachsen: " + bank.getKontostand(nrNochNichtGanzErwachsen));
+		System.out.println("Teenager (wird erst 15): " + bank.getKontostand(nrTeenager));
+
+		bank.schenkungAnNeueErwachsene(new Geldbetrag(100.0));
+
+		System.out.println(System.lineSeparator() + "Nach der Schenkung:");
+		System.out.println("GeradeErwachsen1 (erwartet: 100.0 oder auf nrGeradeErwachsen2 eingezahlt): "
+				+ bank.getKontostand(nrGeradeErwachsen1));
+		System.out.println("GeradeErwachsen2: " + bank.getKontostand(nrGeradeErwachsen2));
+		System.out.println("NochNichtGanzErwachsen (erwartet: 100.0): " + bank.getKontostand(nrNochNichtGanzErwachsen));
+		System.out.println("Teenager (erwartet: 0.0, falsches Alter): " + bank.getKontostand(nrTeenager));
 
 
 	}
