@@ -8,10 +8,20 @@ public class AktienkontoView implements PropertyChangeListener {
 
     private AktienkontoController controller;
 
+    /**
+     * Erstellt eine neue View für ein Aktienkonto, gesteuert durch den gegebenen Controller.
+     * * @param controller der Controller, der die Kommunikation mit dem Aktienkonto verwaltet
+     */
     public AktienkontoView(AktienkontoController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Reagiert auf Änderungen am Aktienkonto.
+     * Wird vom Aktienkonto aufgerufen, wenn sich das Aktiendepot verändert hat,
+     * und gibt den neuen Stand des Depots auf der Konsole aus.
+     * * @param evt das Ereignis, das die Änderung beschreibt
+     */
     public void propertyChange(PropertyChangeEvent evt) {
         if ("aktiendepot".equals(evt.getPropertyName())) {
             Map<Aktie, Integer> neuesDepot = (Map<Aktie, Integer>) evt.getNewValue();

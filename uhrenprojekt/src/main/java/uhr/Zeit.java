@@ -1,5 +1,7 @@
 package uhr;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.time.LocalTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -13,16 +15,33 @@ public class Zeit
 {
 	private Future<?> laufen;
 	private ScheduledExecutorService service;
-	private int stunde, minute, sekunde;     
+	private int stunde, minute, sekunde;
+	private PropertyChangeSupport support = new PropertyChangeSupport(this);
 
 	/**
 	 * erstellt die Uhr
 	 */
     public Zeit() {
 		//Thread starten, um die Uhrzeit laufen zu lassen:
-    	service = Executors.newSingleThreadScheduledExecutor();
-		laufen = service.scheduleAtFixedRate(() -> laufen(), 0, 1, TimeUnit.SECONDS);
+		service = Executors.newSingleThreadScheduledExecutor();
+		service.scheduleAtFixedRate(this::tick, 0, 1, TimeUnit.SECONDS);
     }
+
+	/**
+	 * Aktualisiert die interne Uhrzeit und benachrichtigt alle registrierten
+	 * Observer, falls sich die Zeit seit dem letzten Aufruf geändert hat.
+	 */
+	private void tick() {
+		LocalTime jetzt = LocalTime.now();
+		int s = jetzt.getHour(), m = jetzt.getMinute(), sek = jetzt.getSecond();
+
+		//prüfung, ob eine Änderung vorliegt, um unnötige Benachrichtigungen zu vermeiden
+		if (s != stunde || m != minute || sek != sekunde) {
+			stunde = s; minute = m; sekunde = sek;
+			//informiere alle Observer über das Update
+			support.firePropertyChange("zeit", null, this);
+		}
+	}
 
     /**
      * liefert die aktuelle Stunde
@@ -40,22 +59,25 @@ public class Zeit
      * liefert die aktuelle Sekunde
      * @return Sekunde
      */
-    public int getSekunde() { return sekunde; }  
-	
-	private void laufen()
-	{
-		LocalTime jetzt = LocalTime.now();
-		stunde = jetzt.getHour();
-		minute = jetzt.getMinute();
-		sekunde = jetzt.getSecond();
-	}
+    public int getSekunde() { return sekunde; }
+
+	/**
+	 * Methode zum anmelden eines Observers.
+	 * @param pcl Observer Objekt das angemeldet werden soll.
+	 */
+	public void anmelden(PropertyChangeListener pcl) { support.addPropertyChangeListener(pcl); }
+
+	/**
+	 * Methode zum abmelden eines Observers.
+	 * @param pcl Observer Objekt das abgemeldet werden soll.
+	 */
+	public void abmelden(PropertyChangeListener pcl) { support.removePropertyChangeListener(pcl); }
 	
 	/**
 	 * stoppt die laufende Uhr
 	 */
 	public void uhrStoppen()
 	{
-		laufen.cancel(false);
 		service.shutdown();
 	}
 

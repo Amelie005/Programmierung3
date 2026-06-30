@@ -1,6 +1,7 @@
 package bankprojekt.aktienhandel;
 
 import bankprojekt.basisdaten.Geldbetrag;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,11 @@ public class AktienObserverTest {
         if (Aktie.getAktie(TEST_WKN) == null) {
             new Aktie(TEST_WKN, new Geldbetrag(50.0));
         }
+    }
+
+    @AfterEach
+    void tearDown() {
+        aktienkonto.abmelden(mockObserver);
     }
 
     @Test

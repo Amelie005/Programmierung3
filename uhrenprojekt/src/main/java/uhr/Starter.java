@@ -20,22 +20,25 @@ public class Starter extends Application {
 	@FXML private Button btnDigital;
 	@FXML private Button btnEntfernen;
 	@FXML private Button btnMinute;
+
 	private Stage primaryStage;
-	
+
+	private final Zeit zeitModell = new Zeit();
+
 	private List<DigitalUhr> dUhren = new LinkedList<>();
 	private List<KreisUhr> kUhren = new LinkedList<>();
+	private List<Minutenuhr> mUhren = new LinkedList<>();
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		this.primaryStage = primaryStage;
-		FXMLLoader loader = 
-				new FXMLLoader(getClass().getResource("starter.fxml"));
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("starter.fxml"));
 		loader.setController(this);
 		Parent lc = loader.load();
-	    Scene scene = new Scene(lc, 400, 100);
-        primaryStage.setTitle("Viele Uhren");
-        primaryStage.setScene(scene);
-        primaryStage.show();
+		Scene scene = new Scene(lc, 400, 100);
+		primaryStage.setTitle("MVC Uhren-Steuerung");
+		primaryStage.setScene(scene);
+		primaryStage.show();
 	}
 	
 	@FXML private void initialize()
@@ -52,7 +55,8 @@ public class Starter extends Application {
 	 */
 	private void neueDigitalUhr()
 	{
-		dUhren.add(new DigitalUhr());
+
+		dUhren.add(new DigitalUhr(zeitModell));
 	}
 	
 	/**
@@ -60,25 +64,31 @@ public class Starter extends Application {
 	 */
 	private void neueKreisUhr()
 	{
-		kUhren.add(new KreisUhr());
+		KreisUhr uhr = new KreisUhr(this.zeitModell);
+		kUhren.add(uhr);
 	}
 	
 	/**
 	 * wird beim Klick auf Konsolen-Button aufgerufen
 	 */
 	private void neueMinutenUhr() {
-	
+		mUhren.add(new Minutenuhr(zeitModell));
 	}
 	
 	private void alleEntfernen()
 	{
 		for(KreisUhr k : kUhren) k.dispose();
 		for(DigitalUhr d : dUhren) d.beenden();
+		for(Minutenuhr m : mUhren) m.beenden(); // Falls du in Minutenuhr beenden() ergänzt
+
 		kUhren.clear();
 		dUhren.clear();
+		mUhren.clear();
 	}
 	
 	private void starterSchliessen()
 	{
+		zeitModell.uhrStoppen();
+		alleEntfernen();
 	}
 }

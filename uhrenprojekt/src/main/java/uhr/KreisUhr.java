@@ -6,11 +6,13 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.swing.JFrame;
+import javax.swing.*;
 
 /**
  * stellt eine analoge Uhr dar 
@@ -18,7 +20,7 @@ import javax.swing.JFrame;
  * @author Doro
  *
  */
-public class KreisUhr extends JFrame 
+public class KreisUhr extends JFrame implements PropertyChangeListener
 {
 	private static final long serialVersionUID = 1L;
 	private static final String TITEL = "Kreisuhr";
@@ -42,61 +44,41 @@ public class KreisUhr extends JFrame
 	private static final double ZWEI_PI = 2 * Math.PI;
 	private static final double[] KONST = new double[] { ZWEI_PI / 12, ZWEI_PI / 60, ZWEI_PI / 60 };
 
-	private ScheduledExecutorService service;
-	private Future<?> laufen;
-	
-	private Zeit uhrzeit;
+	private final Zeit zeitModell;
 	private boolean uhrAn;
 	private Color[] farben = ZEIGERFARBE;
 
 	/**
-	 * erstellt die analoge Uhr und bringt sie auf den Bildschirm
+	 * erstellt die analoge Uhr und meldet sie beim Model an.
+	 * @param zeit das  Zeit-Model
 	 */
-	public KreisUhr() {
-		uhrAn = true;
-		uhrzeit = new Zeit();
+	public KreisUhr(Zeit zeit) {
+		this.zeitModell = zeit;
+		this.zeitModell.anmelden(this); //anmelden als Observer
+		this.uhrAn = true;
 
-		tick(); // uhrzeit wird initialisiert
-
-		// Erstellen der Oberflächenelemente:
 		setTitle(TITEL);
 		setSize(BREITE, HOEHE);
 		setVisible(true);
 
-		// Einrichten des KeyListeners, d.h. die Uhr reagiert auf Tastendruck
 		this.addKeyListener(new KeyAdapter() {
-
-			/**
-			 * Taste 'E' schaltet die Uhr ein, 'A' schaltet sie aus, alle
-			 * anderen Tasten werden ignoriert
-			 */
 			@Override
 			public void keyPressed(KeyEvent e) {
 				switch (Character.toUpperCase(e.getKeyChar())) {
-					case 'E' -> {
-						uhrAn = true;
-						farben = ZEIGERFARBE;
-					}
-					case 'A' -> {
-						uhrAn = false;
-						farben = GRAUE_FARBEN;
-					}
+					case 'E' -> { uhrAn = true; farben = ZEIGERFARBE; }
+					case 'A' -> { uhrAn = false; farben = GRAUE_FARBEN; }
 				}
 				repaint();
 			}
 		});
 
-    		service = Executors.newSingleThreadScheduledExecutor();
-		laufen = service.scheduleAtFixedRate(() -> tick(), 0, 1, TimeUnit.SECONDS);
-
-		this.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				laufen.cancel(false);
-				service.shutdown();
+		this.addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosing(java.awt.event.WindowEvent e) {
+				zeitModell.abmelden(KreisUhr.this); //beim schließen abmelden
+				dispose();
 			}
 		});
-		
-		tick();
 	}
 
 	/**
@@ -110,29 +92,38 @@ public class KreisUhr extends JFrame
 		repaint();
 	}
 
-
 	/**
-	 * Analoge Uhr zeichnen
+	 * Wird vom Modell aufgerufen, wenn sich die Zeit geändert hat.
 	 */
-	@Override 
+	@Override
+	public void propertyChange(PropertyChangeEvent evt) {
+		if (uhrAn) {
+			//Swing Updates müssen im Event dispatch thread erfolgen
+			SwingUtilities.invokeLater(this::repaint);
+		}
+	}
+
+	@Override
 	public void paint(Graphics g) {
 		g.clearRect(0, 0, BREITE, HOEHE);
 		g.setColor(HINTERGRUND_FARBE);
 		g.fillRect(0, 0, BREITE, HOEHE);
 		g.setColor(KREIS_FARBE);
-		g.drawOval((BREITE - DURCHMESSER) / 2, (HOEHE - DURCHMESSER) / 2, DURCHMESSER, DURCHMESSER); // Kreis
-		final int[] zeit = new int[] { uhrzeit.getStunde(), uhrzeit.getMinute(), uhrzeit.getSekunde() };
-		g.drawString(INFO , POS_INFO_X, POS_INFO_Y);
-		g.drawString(String.format("%02d:%02d:%02d", zeit[0], zeit[1], zeit[2]), POS_INFO_X, POS_UHRZEIT); // Uhrzeit digital
-		for (int i = 0; i < END_X.length; i++) { // für jeden Zeiger
-			final int z = zeit[i]; // Stunde, Minute oder Sekunde
-			if (END_X[i][z] == 0) { // wurde noch nicht berechnet
+		g.drawOval((BREITE - DURCHMESSER) / 2, (HOEHE - DURCHMESSER) / 2, DURCHMESSER, DURCHMESSER);
+
+		final int[] zeiten = new int[] { zeitModell.getStunde(), zeitModell.getMinute(), zeitModell.getSekunde() };
+		g.drawString(INFO, POS_INFO_X, POS_INFO_Y);
+		g.drawString(String.format("%02d:%02d:%02d", zeiten[0], zeiten[1], zeiten[2]), POS_INFO_X, POS_UHRZEIT);
+
+		for (int i = 0; i < END_X.length; i++) {
+			final int z = zeiten[i];
+			if (END_X[i][z] == 0) {
 				final double grad = z * KONST[i];
 				END_X[i][z] = (int) (ZENTRUM_X + ZEIGERLAENGE[i] * Math.sin(grad));
 				END_Y[i][z] = (int) (ZENTRUM_Y - ZEIGERLAENGE[i] * Math.cos(grad));
 			}
 			g.setColor(farben[i]);
-			g.drawLine(ZENTRUM_X, ZENTRUM_Y, END_X[i][zeit[i]], END_Y[i][zeit[i]]);
+			g.drawLine(ZENTRUM_X, ZENTRUM_Y, END_X[i][zeiten[i]], END_Y[i][zeiten[i]]);
 		}
 	}
 }

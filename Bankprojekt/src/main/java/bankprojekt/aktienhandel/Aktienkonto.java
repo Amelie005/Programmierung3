@@ -119,5 +119,11 @@ public class Aktienkonto extends Konto {
         support.addPropertyChangeListener(pcl);
     }
 
-
+    /**
+     * Methode zum abmelden von Observer-Objekten.
+     * @param pcl Observer der vom PropertyChangeSupport abgemeldet werden soll
+     */
+    public void abmelden(PropertyChangeListener pcl) {
+        support.removePropertyChangeListener(pcl);
+    }
 }

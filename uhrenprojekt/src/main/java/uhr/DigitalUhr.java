@@ -1,5 +1,7 @@
 package uhr;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -19,7 +21,7 @@ import javafx.stage.Stage;
  * Stellt eine Digitale Uhr dar, die man anhalten und weiterlaufen lassen kann
  *
  */
-public class DigitalUhr
+public class DigitalUhr implements PropertyChangeListener
 {
 	@FXML private Label anzeige;
 	@FXML private Button btnEin;
@@ -31,38 +33,45 @@ public class DigitalUhr
 	
 	private Zeit zeit;
 	private boolean uhrAn;
-	
+
 	/**
-	 * erstellt das Fenster für die digitale Uhr und bringt es auf den
-	 * Bildschirm; zu Beginn läuft die Uhr im 1-Sekunden-Takt
+	 * erstellt das Fenster für die digitale Uhr.
+	 * @param zeit das Model, bei dem sich die Uhr anmeldet
 	 */
-	public DigitalUhr() {
-		this.zeit = new Zeit();
-		
+	public DigitalUhr(Zeit zeit) {
+		this.zeit = zeit;
+		this.zeit.anmelden(this); //als Observer anmelden
+
 		stage = new Stage();
-		FXMLLoader loader = 
-				new FXMLLoader(getClass().getResource("digitaluhr.fxml"));
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("digitaluhr.fxml"));
 		loader.setController(this);
-		Parent lc = null;
 		try {
-			lc = loader.load();
+			Parent lc = loader.load();
+			Scene scene = new Scene(lc, 400, 100);
+			stage.setTitle("Digitaluhr");
+			stage.setScene(scene);
+			stage.show();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	    Scene scene = new Scene(lc, 400, 100);
-        stage.setTitle("Digitaluhr");
-        stage.setScene(scene);
-        stage.show();
-        
-      //Thread starten, um die Uhrzeit laufen zu lassen:
-		service = Executors.newSingleThreadScheduledExecutor();
-		laufen = service.scheduleAtFixedRate(() -> tick(), 0, 1, TimeUnit.SECONDS);
-		einschalten();
-	} 
+	}
+
+	/**
+	 * Wird vom Modell aufgerufen, wenn sich die Zeit geändert hat.
+	 */
+	@Override
+	public void propertyChange(PropertyChangeEvent evt) {
+		Platform.runLater(() -> {
+			anzeige.setText(String.format("%02d:%02d:%02d",
+					zeit.getStunde(), zeit.getMinute(), zeit.getSekunde()));
+		});
+	}
 	
 	@FXML private void initialize()
 	{
-		tick();
+		//initiale Anzeige
+		anzeige.setText(String.format("%02d:%02d:%02d",
+				zeit.getStunde(), zeit.getMinute(), zeit.getSekunde()));
 		btnEin.setOnAction( e -> einschalten());
 		btnAus.setOnAction( e -> ausschalten());
 		stage.setOnCloseRequest(e -> fensterSchliessen());
@@ -93,21 +102,8 @@ public class DigitalUhr
 	 */
 	private void fensterSchliessen()
 	{
-		laufen.cancel(false);
-		service.shutdown();
-	}
-
-	/**
-	 * Holen der aktuellen Uhrzeit und Anzeige, wenn die Uhr angestellt ist
-	 */
-	private void tick() 
-	{
-		if(uhrAn)
-		{
-			Platform.runLater( () ->
-				anzeige.setText(String.format("%02d:%02d:%02d", 
-						zeit.getStunde(), zeit.getMinute(),zeit.getSekunde())));
-		}
+		zeit.abmelden(this);
+		stage.close();
 	}
 
 	/**
@@ -116,6 +112,5 @@ public class DigitalUhr
 	public void beenden() {
 		stage.close();
 	}
-
 
 }
