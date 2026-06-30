@@ -76,22 +76,6 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
         else
         	return false;
     }
-	
-	@Override
-	public boolean abheben(Geldbetrag betrag) throws GesperrtException{
-		if (betrag == null || betrag.isNegativ()) {
-			throw new IllegalArgumentException("Betrag ungültig");
-		}
-		if(this.isGesperrt())
-			throw new GesperrtException(this.getKontonummer());
-		if (!getKontostand().plus(dispo).minus(betrag).isNegativ())
-		{
-			setKontostand(getKontostand().minus(betrag));
-			return true;
-		}
-		else
-			return false;
-	}
 
     @Override
     public void ueberweisungEmpfangen(Geldbetrag betrag, String vonName, long vonKontonr, long vonBlz, String verwendungszweck)
@@ -130,4 +114,10 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
 	public void einzahlen(Geldbetrag betrag) {
 		super.einzahlen(betrag);
 	}
+
+	@Override
+	protected boolean pruefeDeckungUndRegeln(Geldbetrag betrag) {
+		return !getKontostand().plus(dispo).isNegativ();
+	}
 }
+

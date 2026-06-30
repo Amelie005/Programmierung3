@@ -84,66 +84,36 @@ public class Sparbuch extends Konto {
 		zeitpunkt = kalender.getHeutigesDatum();
 	}
 
-	//Vorher: bereitsAbgehoben addiert, danach Monatscheck und Limit dann auf 0 gesetzt (so geht die erste Abhebung des Monats verloren)
-	//Jetzt korrigierte Methode: erst Monatscheck mit Limit auf 0 setzen, danach bereitsAbgehoben addieren (erste Abhebung wird jetzt korrekt gezählt)
-	//Test der den Fehler erkannt hat: Test 8
 	@Override
-	public boolean abheben (Geldbetrag betrag) throws GesperrtException {
-		if (betrag == null || betrag.isNegativ()) {
-			throw new IllegalArgumentException("Betrag ungültig");
-		}
-		if(this.isGesperrt()) {
-			throw new GesperrtException(this.getKontonummer());
-		}
-
-		Geldbetrag neu = getKontostand().minus(betrag);
+	protected boolean pruefeDeckungUndRegeln(Geldbetrag betrag) {
 		LocalDate heute = kalender.getHeutigesDatum();
 
-		//Monat zurückgesetzt VOR der Addition der Beträge prüfen (das war der Fehler)
-		//Fehler wurde an sich so gesehen, aber via Test 8 überprüft (der Originalcode würde da als Fehler anschlagen)
-		if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear()) {
+		//aktuellen Stand ermitteln
+		Geldbetrag aktuelleSumme = (heute.getMonth() != zeitpunkt.getMonth() ||
+				heute.getYear() != zeitpunkt.getYear())
+				? Geldbetrag.NULL_EURO
+				: bereitsAbgehoben;
+
+		Geldbetrag neu = getKontostand().minus(betrag);
+
+		//prüfen ob möglich
+		return neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
+				aktuelleSumme.plus(betrag).compareTo(Sparbuch.ABHEBESUMME) <= 0;
+	}
+
+	@Override
+	protected void nachAbhebenHook(Geldbetrag betrag) {
+		//erst hier Zustand vom Sparbuch ändern
+		LocalDate heute = kalender.getHeutigesDatum();
+
+		//Monat/Jahreswechsel prüfen
+		if (heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear()) {
 			this.bereitsAbgehoben = Geldbetrag.NULL_EURO;
 		}
 
-		if (neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
-				bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME) <= 0) {
-			setKontostand(neu);
-			bereitsAbgehoben = bereitsAbgehoben.plus(betrag);
-			this.zeitpunkt = heute;
-			return true;
-		}
-		else
-			return false;
+		this.bereitsAbgehoben = this.bereitsAbgehoben.plus(betrag);
+		this.zeitpunkt = heute;
 	}
-
-	//Alte abheben() Methode
-	/*@Override
-	public boolean abheben (Geldbetrag betrag) throws GesperrtException{
-		if (betrag == null || betrag.isNegativ()) {
-			throw new IllegalArgumentException("Betrag ungültig");
-		}
-		if(this.isGesperrt())
-		{
-			GesperrtException e = new GesperrtException(this.getKontonummer());
-			throw e;
-		}
-		Geldbetrag neu = getKontostand().minus(betrag);
-		if (neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
-				bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME)<= 0)
-		{
-			setKontostand(neu);
-			bereitsAbgehoben = bereitsAbgehoben.plus(betrag);
-			LocalDate heute = kalender.getHeutigesDatum();
-			if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear())
-			{
-				this.bereitsAbgehoben = Geldbetrag.NULL_EURO;
-			}
-			this.zeitpunkt = heute;
-			return true;
-		}
-		else
-			return false;
-	}*/
 	
 	@Override
 	public String toString()

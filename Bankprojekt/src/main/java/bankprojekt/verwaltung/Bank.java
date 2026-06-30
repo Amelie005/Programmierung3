@@ -3,7 +3,9 @@ package bankprojekt.verwaltung;
 import bankprojekt.basisdaten.*;
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
+import bankprojekt.fabriken.Kontofabrik;
 
+import java.io.*;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
@@ -13,7 +15,7 @@ import java.util.stream.Stream;
  * Stellt ein Bank dar.
  * @author Amelie Dzierzawa, 599428
  */
-public class Bank {
+public class Bank implements Serializable {
     private final long bankleitzahl;
     private final Map<Long, Konto> konten = new HashMap<>();
 
@@ -121,34 +123,16 @@ public class Bank {
         return k;
     }
 
-
     /**
-     * Erstellt ein Girokonto für den angegebenen Kunden.
-     * Die Kontonummer wird automatisch als nächste freie Nummer aufsteigende vergeben,
-     * sodass keine Kollisionen entstehen können.
-     * @param inhaber Kunde für den das Girokonto erstellt werden soll
-     * @return neue vergebene Kontonummer
-     * @throws UngueltigeKontonummerException wenn die vergebene Kontonummer ulgültig ist (tritt eigetnlich nicht auf)
+     * Erstellt ein neues Konto, entsprechend der angegebenen Kontofabrik.
+     * @param fabrik Fabrik, die zum Erstellen des Kontos genutzt werden soll
+     * @param inhaber Inhaber, dem das Konto gehören soll
+     * @return Kontonummer, des erstellten Kontoobjekts
      */
-    public long girokontoErstellen(Kunde inhaber) throws UngueltigeKontonummerException {
+    public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber) {
         long neueKontonummer = naechsteKontonummer++;
-        Girokonto neuesGirokonto = new Girokonto(inhaber, neueKontonummer, new Geldbetrag(500.00));
-        konten.put(neueKontonummer, neuesGirokonto);
-        return neueKontonummer;
-    }
-
-    /**
-     * Erstellt ein Sparbuch für den angegebenen Kunden.
-     * Die Kontonummer wird automatisch als nächste freie Nummer aufsteigend vergeben,
-     * sodass keine Kollisionen entstehen können.
-     * @param inhaber Kunde für den das Sparbuch erstellt werden soll
-     * @return neu vergebene Kontonummer
-     * @throws UngueltigeKontonummerException wenn die vergebene Kontonummer ungültig ist (sollte eigentlich nie auftreten)
-     */
-    public long sparbuchErstellen(Kunde inhaber) throws UngueltigeKontonummerException {
-        long neueKontonummer = naechsteKontonummer++;
-        Sparbuch neuesSparbuch = new Sparbuch(inhaber, neueKontonummer);
-        konten.put(neueKontonummer, neuesSparbuch);
+        Konto neuesKonto = fabrik.erstelleKonto(inhaber, neueKontonummer);
+        konten.put(neueKontonummer, neuesKonto);
         return neueKontonummer;
     }
 
@@ -273,52 +257,6 @@ public class Bank {
     public boolean geldUeberweisen(long vonKontonr, long nachKontonr, Geldbetrag betrag, String verwendungszweck)
         throws UngueltigeKontonummerException, GesperrtException
     {
-        /* ALTE VERSION
-        UeberweisungsfaehigesKonto vonKonto = null;
-        UeberweisungsfaehigesKonto nachKonto = null;
-
-        //nach den Konten suchen und gleichzeitig prüfen, ob sie überweisungsfähig sind
-        for (Konto k : konten) {
-            if (k.getKontonummer() == vonKontonr && k instanceof UeberweisungsfaehigesKonto) { //KLAUSURRELEVANT
-                vonKonto = (UeberweisungsfaehigesKonto) k;
-            }
-            if (k.getKontonummer() == nachKontonr && k instanceof UeberweisungsfaehigesKonto) {
-                nachKonto = (UeberweisungsfaehigesKonto) k;
-            }
-        }
-
-        //prüfen, ob beide Konten gefunden worden sind
-        if (vonKonto == null || nachKonto == null) {
-            return false;
-        }
-
-        try {
-            boolean erfolgreich = vonKonto.ueberweisungAbsenden(
-                    betrag,
-                    nachKonto.getInhaber().getName(), //man braucht den Namen des Empfängers
-                    nachKontonr,
-                    this.bankleitzahl,
-                    verwendungszweck
-            );
-
-            //wenn absenden funktioniert hat, muss es noch empfangen werden
-            if (erfolgreich) {
-                nachKonto.ueberweisungEmpfangen(
-                        betrag,
-                        vonKonto.getInhaber().getName(), //auch wieder Name nötig, aber hier vom Sender
-                        vonKontonr,
-                        this.bankleitzahl,
-                        verwendungszweck
-                );
-                return true;
-            }
-
-        } catch (GesperrtException e) {
-            //falls eines der Konten gesperrt ist
-            return false;
-        }
-        return false;
-        */
 
         Konto vonRoh = kontoGefundenOderException(vonKontonr, true, true);
         Konto nachRoh = kontoGefundenOderException(nachKontonr, true);
@@ -381,22 +319,6 @@ public class Bank {
             }
         }
         return anzahlGeloeschterKonten;
-    }
-
-    /**
-     * Fügt das gegebene Konto k, bei dem es sich um ein Mock-Objekt
-     * handeln sollte, in die Kontenliste der Bank ein und liefert die dabei von der Bank vergebene
-     * Kontonummer zurück.
-     * @param k Konto das in die Kontoliste der Bank eingefügt werden soll
-     * @return für das Konto k vergebene Kontonummer
-     */
-    public long mockEinfuegen(Konto k) {
-        long neueNummer = this.naechsteKontonummer; //neue Kontonummer bestimmen und hochzählen
-        this.naechsteKontonummer++;
-
-        this.konten.put(neueNummer, k);
-
-        return neueNummer;
     }
 
     /**
@@ -465,7 +387,31 @@ public class Bank {
                         .ifPresent(konto -> geldEinzahlen(konto.getKontonummer(), betrag)));
     }
 
+    /**
+     * Speichert das gesamte Bankobjekt in den angegebenen ziel-Strom
+     * mit all seinen Informationen.
+     * @param ziel Strom, in dem alles gespeichert wird
+     * @throws IOException wird geworfen, wenn etwas schief geht
+     */
+    public void speichern (OutputStream ziel) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(ziel);
+        oos.writeObject(this);
+        oos.flush(); //flushen, schließen sollte der Aufrufer der Methode machen
+    }
 
+    /**
+     * Liest aus der angegebenen Quelle ein Bankobjekt ein.
+     * @param quelle Quelle aus der das Bankobjekt eingelesen werden soll
+     * @return das Bankobjekt, oder eine leere Bank mit der BLZ 0, wenn etwas schief geht
+     */
+    public static Bank einlesen(InputStream quelle) {
+        try {
+            ObjectInputStream ois = new ObjectInputStream(quelle);
+            return (Bank) ois.readObject();
+        } catch (IOException | ClassNotFoundException ex) {
+            return new Bank(0);
+        }
+    }
 }
 
 

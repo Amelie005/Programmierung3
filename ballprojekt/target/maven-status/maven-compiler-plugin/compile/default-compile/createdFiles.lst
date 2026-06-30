@@ -1,0 +1,5 @@
+ballspiel\BallSpielerei.class
+ballspiel\Farbtopf.class
+ballspiel\Ball.class
+ballspiel\BallOberflaeche.class
+ballspiel\ZuWenigFarbeException.class

@@ -1,5 +1,6 @@
 package bankprojekt.basisdaten;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -12,7 +13,7 @@ import java.util.Objects;
  * @author Dorothea Hubrich
  */
 @SuppressWarnings("unused")
-public class Kunde implements Comparable<Kunde> {
+public class Kunde implements Comparable<Kunde>, Serializable {
 
 	/**
 	 * Ein Musterkunde

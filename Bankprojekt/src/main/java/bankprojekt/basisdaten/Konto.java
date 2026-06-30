@@ -1,5 +1,6 @@
 package bankprojekt.basisdaten;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Comparator;
 
@@ -9,7 +10,7 @@ import bankprojekt.exceptions.UngueltigeKontonummerException;
 /**
  * stellt ein allgemeines Bank-Konto dar
  */
-public abstract class Konto implements Comparable<Konto>
+public abstract class Konto implements Comparable<Konto>, Serializable
 {
 	/**
 	 * die Kontonummer
@@ -30,7 +31,7 @@ public abstract class Konto implements Comparable<Konto>
 	/**
 	 * der aktuelle Kontostand
 	 */
-	private Geldbetrag kontostand = Geldbetrag.NULL_EURO;;
+	protected Geldbetrag kontostand = Geldbetrag.NULL_EURO;
 
 	/**
 	 * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
@@ -178,8 +179,40 @@ public abstract class Konto implements Comparable<Konto>
 	 * @return true, wenn die Abhebung geklappt hat, 
 	 * 		   false, wenn sie abgelehnt wurde
 	 */
-	public abstract boolean abheben(Geldbetrag betrag) 
-								throws GesperrtException;
+	public final boolean abheben(Geldbetrag betrag) throws GesperrtException {
+		//allgemeine Prüfungen
+		if (betrag == null || betrag.isNegativ()) {
+			throw new IllegalArgumentException("Betrag ungültig.");
+		}
+		if (this.isGesperrt()) {
+			throw new GesperrtException(this.nummer);
+		}
+
+		//Prüfungen von individuellen Regeln der Unterklassen
+		if (pruefeDeckungUndRegeln(betrag)) {
+			this.setKontostand(this.getKontostand().minus(betrag));
+			nachAbhebenHook(betrag);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Abstrakte Methode die je nach Unterklasse
+	 * entsprechende Regeln zur Geldabhebung prüft.
+	 * @param betrag Geldbetrag der abgehoben werden soll
+	 * @return true, wenn das abheben möglich ist, false, wenn nicht
+	 */
+	protected abstract boolean pruefeDeckungUndRegeln(Geldbetrag betrag);
+
+	/**
+	 * Eine leere Hook Methode. Kann bei bei Bedarf
+	 * der Unterklassen unterschrieben werden.
+	 * @param betrag Geldbetrag um den es sich handelt
+	 */
+	protected void nachAbhebenHook(Geldbetrag betrag) {
+		//Standardmäßig leer
+	}
 	
 	/**
 	 * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.

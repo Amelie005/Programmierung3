@@ -1,12 +1,13 @@
 package bankprojekt.basisdaten;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.decimal4j.util.DoubleRounder;
 
 /**
  * Ein Geldbetrag mit Währung
  */
-public class Geldbetrag implements Comparable<Geldbetrag>{
+public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
 	/**
 	 * 0 €
 	 */

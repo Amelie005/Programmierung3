@@ -46,7 +46,6 @@ class BankTest {
     void setUp() throws GesperrtException {
 
         bank = new Bank(12345L);
-
         MockitoAnnotations.openMocks(this);
 
         kundeVon = new Kunde("Amelie", "Dzierzawa", "Berliner Straße 1", LocalDate.of(2005, 12, 12));
@@ -61,16 +60,9 @@ class BankTest {
         when(mockGiroNach.isGesperrt()).thenReturn(false);
 
         //Mocks in die Bank einfügen, Kontonummern werden automatisch vergeben
-        nrVon = bank.mockEinfuegen(mockGiroVon);
-        nrNach = bank.mockEinfuegen(mockGiroNach);
-        nrSparbuch = bank.mockEinfuegen(mockSparbuch);
-
-//        when(mockGiroNach.ueberweisungAbsenden(
-//                ArgumentMatchers.any(Geldbetrag.class),
-//                ArgumentMatchers.anyString(),
-//                ArgumentMatchers.anyLong(),
-//                ArgumentMatchers.anyLong(),
-//                ArgumentMatchers.anyString())).thenReturn(true);
+        nrVon = bank.kontoErstellen((inhaber, nummer) -> mockGiroVon, kundeVon);
+        nrNach = bank.kontoErstellen((inhaber, nummer) -> mockGiroNach, kundeNach);
+        nrSparbuch = bank.kontoErstellen((inhaber, nummer) -> mockSparbuch, kundeVon);
 
     }
 

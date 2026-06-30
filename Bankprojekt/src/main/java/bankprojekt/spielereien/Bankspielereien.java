@@ -10,6 +10,7 @@ import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
+import bankprojekt.fabriken.GirokontoFabrik;
 import bankprojekt.verwaltung.Bank;
 
 /**
@@ -32,23 +33,24 @@ public class Bankspielereien {
 		Kunde mama = new Kunde("Mama", "Erna", "zuhause", LocalDate.of(aktuellesJahr - 42, 3, 5));
 		Kunde papa = new Kunde("Papa", "Hugo", "zuhause", LocalDate.of(aktuellesJahr - 43, 7, 15));
 		Kunde senior = new Kunde("Uropa", "Heinz", "Neben dem Friedhof", LocalDate.of(aktuellesJahr - 95, 2, 28));
-		long nrOpa1 = bank.girokontoErstellen(opa);
-		long nrOpa2 = bank.girokontoErstellen(opa);
-		long nrOpa3 = bank.girokontoErstellen(opa);
-		long nrOma = bank.girokontoErstellen(oma);
-		long nrKind1 = bank.girokontoErstellen(kind);
-		long nrKind2 = bank.girokontoErstellen(kind);
-		long nrTeenager = bank.girokontoErstellen(teenager);
-		long nrGeradeErwachsen1 = bank.girokontoErstellen(geradeErwachsen);
-		long nrGeradeErwachsen2 = bank.girokontoErstellen(geradeErwachsen);
-		long nrNochNichtGanzErwachsen = bank.girokontoErstellen(nochNichtGanzErwachsen);
-		long nrMama1 = bank.girokontoErstellen(mama);
-		long nrMama2 = bank.girokontoErstellen(mama);
-		long nrMama3 = bank.girokontoErstellen(mama);
-		long nrMama4 = bank.girokontoErstellen(mama);
-		long nrPapa1 = bank.girokontoErstellen(papa);
-		long nrPapa2 = bank.girokontoErstellen(papa);
-		long nrSenior = bank.girokontoErstellen(senior);
+
+		long nrOpa1 = bank.kontoErstellen(new GirokontoFabrik(), opa);
+		long nrOpa2 = bank.kontoErstellen(new GirokontoFabrik(), opa);
+		long nrOpa3 = bank.kontoErstellen(new GirokontoFabrik(), opa);
+		long nrOma = bank.kontoErstellen(new GirokontoFabrik(), oma);
+		long nrKind1 = bank.kontoErstellen(new GirokontoFabrik(), kind);
+		long nrKind2 = bank.kontoErstellen(new GirokontoFabrik(), kind);
+		long nrTeenager = bank.kontoErstellen(new GirokontoFabrik(), teenager);
+		long nrGeradeErwachsen1 = bank.kontoErstellen(new GirokontoFabrik(), geradeErwachsen);
+		long nrGeradeErwachsen2 = bank.kontoErstellen(new GirokontoFabrik(), geradeErwachsen);
+		long nrNochNichtGanzErwachsen = bank.kontoErstellen(new GirokontoFabrik(), nochNichtGanzErwachsen);
+		long nrMama1 = bank.kontoErstellen(new GirokontoFabrik(), mama);
+		long nrMama2 = bank.kontoErstellen(new GirokontoFabrik(), mama);
+		long nrMama3 = bank.kontoErstellen(new GirokontoFabrik(), mama);
+		long nrMama4 = bank.kontoErstellen(new GirokontoFabrik(), mama);
+		long nrPapa1 = bank.kontoErstellen(new GirokontoFabrik(), papa);
+		long nrPapa2 = bank.kontoErstellen(new GirokontoFabrik(), papa);
+		long nrSenior = bank.kontoErstellen(new GirokontoFabrik(), senior);
 
 		//getBankleitzahl()
 		System.out.println("Bankleitzahl dieser Bank: " + bank.getBankleitzahl());
@@ -63,7 +65,7 @@ public class Bankspielereien {
 		System.out.println("Abheben von 200€ erfolgreich: " + abhebenErfolgreich);
 		System.out.println("Kontostand Opa1 (erwartet 1300): " + bank.getKontostand(nrOpa1));
 
-        //Fehlerfall: Abheben von nicht existierendem Konto
+		//Fehlerfall: Abheben von nicht existierendem Konto
 		try {
 			bank.geldAbheben(999999L, new Geldbetrag(10.0));
 			System.out.println("Abheben von nicht existierendem Konto (erwartet Exception): keine Exception geworfen!");
@@ -166,7 +168,5 @@ public class Bankspielereien {
 		System.out.println("GeradeErwachsen2: " + bank.getKontostand(nrGeradeErwachsen2));
 		System.out.println("NochNichtGanzErwachsen (erwartet: 100.0): " + bank.getKontostand(nrNochNichtGanzErwachsen));
 		System.out.println("Teenager (erwartet: 0.0, falsches Alter): " + bank.getKontostand(nrTeenager));
-
-
 	}
 }

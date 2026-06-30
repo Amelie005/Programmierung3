@@ -1,11 +1,12 @@
 package bankprojekt.nuetzliches;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 /**
  * Bereitstellung des heutigen Datums
  */
-public class Kalender {
+public class Kalender implements Serializable {
 	/**
 	 * liefert das heutige Datum
 	 * @return das heutige Datum
