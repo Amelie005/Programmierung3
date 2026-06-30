@@ -4,6 +4,8 @@ import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.exceptions.GesperrtException;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -16,6 +18,8 @@ import java.util.concurrent.*;
 public class Aktienkonto extends Konto {
 
     private Map<Aktie, Integer> aktiendepot = new ConcurrentHashMap<Aktie, Integer>();
+    private PropertyChangeSupport support = new PropertyChangeSupport(this);
+
 
     /**
      * Wartet asynchron, bis der Preis der Aktie mit der gewünschten Wertpapierkennnummer unter den angegebenen Höchstpreis gefallen ist.
@@ -51,6 +55,7 @@ public class Aktienkonto extends Konto {
                     setKontostand(getKontostand().minus(gesamtpreis));
 
                     aktiendepot.merge(aktie, anzahl, Integer::sum); //wenn erfolgreich, Aktie(n) zum Depot zufügen
+                    support.firePropertyChange("aktiendepot", null, aktiendepot); //observer "bescheid sagen"
                     future.complete(gesamtpreis);
                 } else {
                     System.out.println("Das Konto ist nicht ausreichend gedeckt!"); //falls immer noch nicht erfolgreich, war Konto nicht gedeckt
@@ -90,6 +95,7 @@ public class Aktienkonto extends Konto {
                 Geldbetrag gesamterloes = aktie.getKurs().mal(anzahl); //Gesamterlös errechnen
 
                 aktiendepot.remove(aktie); //Aktie aus Depot entfernen
+                support.firePropertyChange("aktiendepot", null, aktiendepot); //observer wieder "bescheid sagen"
                 einzahlen(gesamterloes); //Geld auf Konto einzahlen
 
                 future.complete(gesamterloes);
@@ -104,4 +110,14 @@ public class Aktienkonto extends Konto {
         //abheben nur bis 0 möglich
         return !getKontostand().minus(betrag).isNegativ();
     }
+
+    /**
+     * Methode zum anmelden von Observer-Objekten.
+     * @param pcl Observer der im PropertyChangeSupport registriert werden soll
+     */
+    public void anmelden(PropertyChangeListener pcl) {
+        support.addPropertyChangeListener(pcl);
+    }
+
+
 }
